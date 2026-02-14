@@ -12,9 +12,8 @@ if (isLocalhost) {
     // Local development
     window.CHESS_SERVER_URL = 'http://localhost:3000';
 } else {
-    // Production - UPDATE THIS after deploying your server
-    // Example: 'https://chess-game-server.onrender.com'
-    window.CHESS_SERVER_URL = 'http://localhost:3000'; // CHANGE THIS TO YOUR DEPLOYED SERVER URL
+    // Production - your Render.com server
+    window.CHESS_SERVER_URL = 'https://chess-o3ub.onrender.com';
 }
 
 console.log('Chess server URL:', window.CHESS_SERVER_URL);
