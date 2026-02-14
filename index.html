@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div id="login-screen" class="screen">
+            <div class="login-container">
+                <h1>Chess Game</h1>
+                <div id="login-form">
+                    <input type="text" id="username" placeholder="Username" required>
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button id="login-btn">Login</button>
+                    <button id="register-btn">Register</button>
+                </div>
+                <div id="auth-message"></div>
+            </div>
+        </div>
+
+        <div id="main-menu" class="screen hidden">
+            <div class="menu-container">
+                <div class="menu-header">
+                    <div class="player-info">
+                        <span id="menu-player-name"></span>
+                        <span id="menu-player-elo"></span>
+                    </div>
+                    <button id="menu-logout-btn">Logout</button>
+                </div>
+                
+                <div class="menu-content">
+                    <div class="menu-section">
+                        <h2>Play Chess</h2>
+                        <div class="menu-buttons">
+                            <button id="play-ai-btn" class="menu-btn primary">Play vs AI</button>
+                            <button id="play-online-btn" class="menu-btn primary">Play Online</button>
+                            <button id="create-room-btn" class="menu-btn secondary">Create Private Room</button>
+                            <button id="join-room-btn" class="menu-btn secondary">Join Room</button>
+                        </div>
+                    </div>
+                    
+                    <div class="menu-section">
+                        <h2>Social</h2>
+                        <div class="menu-buttons">
+                            <button id="friends-btn" class="menu-btn">Friends</button>
+                            <button id="leaderboard-btn" class="menu-btn">Leaderboard</button>
+                            <button id="profile-btn" class="menu-btn">Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div class="game-header">
+                <div class="player-info">
+                    <div class="player white-player">
+                        <span id="white-player-name">White</span>
+                        <span id="white-player-elo"></span>
+                    </div>
+                    <div class="player black-player">
+                        <span id="black-player-name">Black</span>
+                        <span id="black-player-elo"></span>
+                    </div>
+                </div>
+                <div class="game-controls">
+                    <button id="new-game-btn">New Game</button>
+                    <select id="difficulty-select" class="ai-only">
+                        <option value="easy">Easy AI</option>
+                        <option value="medium">Medium AI</option>
+                        <option value="hard">Hard AI</option>
+                    </select>
+                    <button id="offer-draw-btn" class="online-only">Offer Draw</button>
+                    <button id="resign-btn">Resign</button>
+                    <button id="back-to-menu-btn">Back to Menu</button>
+                </div>
+            </div>
+
+            <div class="game-container">
+                <div class="game-sidebar left">
+                    <div class="game-info">
+                        <div id="current-player">White to move</div>
+                        <div id="game-status"></div>
+                        <div id="connection-status" class="online-only hidden">Connected</div>
+                        <div id="captured-pieces">
+                            <div class="captured white-captured"></div>
+                            <div class="captured black-captured"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chess-board"></div>
+
+                <div class="game-sidebar right">
+                    <div class="move-history">
+                        <h3>Move History</h3>
+                        <div id="moves-list"></div>
+                    </div>
+                    
+                    <div id="game-chat" class="online-only hidden">
+                        <h3>Chat</h3>
+                        <div id="chat-messages"></div>
+                        <div class="chat-input">
+                            <input type="text" id="chat-input" placeholder="Type a message..." maxlength="200">
+                            <button id="send-chat-btn">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="promotion-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Choose Promotion Piece</h3>
+                <div class="promotion-pieces">
+                    <button class="promotion-btn" data-piece="q">♕ Queen</button>
+                    <button class="promotion-btn" data-piece="r">♖ Rook</button>
+                    <button class="promotion-btn" data-piece="b">♗ Bishop</button>
+                    <button class="promotion-btn" data-piece="n">♘ Knight</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="room-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 id="room-modal-title">Join Room</h3>
+                <input type="text" id="room-code-input" placeholder="Enter room code">
+                <div class="modal-buttons">
+                    <button id="room-modal-confirm">Join</button>
+                    <button id="room-modal-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="friends-modal" class="modal hidden">
+            <div class="modal-content large">
+                <h3>Friends</h3>
+                <div class="friends-tabs">
+                    <button class="tab-btn active" data-tab="friends-list">Friends</button>
+                    <button class="tab-btn" data-tab="friend-requests">Requests</button>
+                    <button class="tab-btn" data-tab="add-friend">Add Friend</button>
+                </div>
+                
+                <div id="friends-list" class="tab-content">
+                    <div id="friends-container"></div>
+                </div>
+                
+                <div id="friend-requests" class="tab-content hidden">
+                    <div id="requests-container"></div>
+                </div>
+                
+                <div id="add-friend" class="tab-content hidden">
+                    <input type="text" id="friend-username-input" placeholder="Username">
+                    <button id="send-friend-request-btn">Send Request</button>
+                </div>
+                
+                <button id="close-friends-modal" class="close-modal">Close</button>
+            </div>
+        </div>
+
+        <div id="leaderboard-modal" class="modal hidden">
+            <div class="modal-content large">
+                <h3>ELO Leaderboard</h3>
+                <div id="leaderboard-container"></div>
+                <button id="close-leaderboard-modal" class="close-modal">Close</button>
+            </div>
+        </div>
+
+        <div id="draw-offer-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 id="draw-offer-title">Draw Offer</h3>
+                <p id="draw-offer-message">Your opponent is offering a draw. Do you accept?</p>
+                <div class="modal-buttons">
+                    <button id="accept-draw-btn">Accept Draw</button>
+                    <button id="decline-draw-btn">Decline</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chess-engine.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/multiplayer.js"></script>
+    <script src="js/social.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Debug script to check if everything loads
+        window.addEventListener('load', function() {
+            console.log('=== CHESS GAME DEBUG INFO ===');
+            console.log('AuthSystem available:', typeof AuthSystem);
+            console.log('authSystem instance:', typeof authSystem);
+            console.log('Login button:', document.getElementById('login-btn'));
+            console.log('Register button:', document.getElementById('register-btn'));
+            console.log('Username input:', document.getElementById('username'));
+            console.log('Password input:', document.getElementById('password'));
+            console.log('LocalStorage test:', localStorage.getItem('test') || 'empty');
+            console.log('=== END DEBUG INFO ===');
+        });
+    </script>
+</body>
+</html>

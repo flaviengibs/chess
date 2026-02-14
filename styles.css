@@ -1,0 +1,891 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Login Screen */
+.login-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+    min-width: 300px;
+}
+
+.login-container h1 {
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+.login-container input {
+    width: 100%;
+    padding: 0.8rem;
+    margin: 0.5rem 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.login-container button {
+    width: 100%;
+    padding: 0.8rem;
+    margin: 0.5rem 0;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#login-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+#login-btn:hover {
+    background: #45a049;
+}
+
+#register-btn {
+    background: #2196F3;
+    color: white;
+}
+
+#register-btn:hover {
+    background: #1976D2;
+}
+
+#auth-message {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    border-radius: 5px;
+}
+
+.error {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.success {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+/* Main Menu */
+.menu-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    min-width: 500px;
+    max-width: 600px;
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.menu-section {
+    margin-bottom: 2rem;
+}
+
+.menu-section h2 {
+    margin-bottom: 1rem;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.menu-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.menu-btn {
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.menu-btn.primary {
+    background: #4CAF50;
+    color: white;
+}
+
+.menu-btn.primary:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
+
+.menu-btn.secondary {
+    background: #2196F3;
+    color: white;
+}
+
+.menu-btn.secondary:hover {
+    background: #1976D2;
+    transform: translateY(-2px);
+}
+
+.menu-btn:not(.primary):not(.secondary) {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.menu-btn:not(.primary):not(.secondary):hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+/* Game Screen */
+#game-screen {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.player-info {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    min-width: 120px;
+}
+
+.white-player {
+    background: #f8f8f8;
+    border: 2px solid #ddd;
+}
+
+.black-player {
+    background: #333;
+    color: white;
+    border: 2px solid #666;
+}
+
+.player.active {
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.game-controls button, .game-controls select {
+    margin-left: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.game-controls button {
+    background: #4CAF50;
+    color: white;
+}
+
+.game-controls button:hover {
+    background: #45a049;
+}
+
+.game-controls select {
+    background: white;
+    border: 1px solid #ddd;
+}
+
+.ai-only {
+    display: none;
+}
+
+.ai-mode .ai-only {
+    display: inline-block;
+}
+
+.online-only {
+    display: none;
+}
+
+.online-mode .online-only {
+    display: block;
+}
+
+.game-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.game-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 250px;
+    flex-shrink: 0;
+}
+
+.game-sidebar.left {
+    order: 1;
+}
+
+.game-sidebar.right {
+    order: 3;
+}
+
+#chess-board {
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
+    border: 3px solid #8B4513;
+    border-radius: 5px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    background: white;
+    flex-shrink: 0;
+}
+
+.game-info {
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+#current-player {
+    font-weight: bold;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: #f5f5f5;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#game-status {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+#connection-status {
+    padding: 0.5rem;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+#connection-status.connected {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+#connection-status.disconnected {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.game-won {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.game-draw {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.ai-thinking {
+    background: #e3f2fd;
+    color: #1976d2;
+    animation: pulse 1.5s infinite;
+}
+
+.captured-pieces {
+    margin-bottom: 1rem;
+}
+
+.captured {
+    margin: 0.5rem 0;
+    min-height: 40px;
+    padding: 0.5rem;
+    background: #f5f5f5;
+    border-radius: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.captured-piece {
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Chess Board */
+.square {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.square.light {
+    background-color: #f0d9b5;
+}
+
+.square.dark {
+    background-color: #b58863;
+}
+
+.square.selected {
+    background-color: #7fb069 !important;
+    box-shadow: inset 0 0 0 3px #5a8a4a;
+}
+
+.square.valid-move {
+    background-color: #9fd3c7 !important;
+}
+
+.square.valid-move::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #2e7d32;
+    border-radius: 50%;
+    opacity: 0.7;
+}
+
+.square.capture-move {
+    background-color: #ffab91 !important;
+}
+
+.square.capture-move::after {
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border: 3px solid #d32f2f;
+    border-radius: 50%;
+    opacity: 0.7;
+}
+
+.square.in-check {
+    background-color: #ff5252 !important;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Move History */
+.move-history {
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.move-history h3 {
+    margin-bottom: 1rem;
+    color: #333;
+    text-align: center;
+}
+
+#moves-list {
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.move-pair {
+    display: flex;
+    margin-bottom: 0.2rem;
+}
+
+.move-number {
+    width: 30px;
+    font-weight: bold;
+    color: #666;
+}
+
+.move {
+    flex: 1;
+    padding: 0 0.5rem;
+}
+
+/* Chat */
+#game-chat {
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+#game-chat h3 {
+    margin-bottom: 1rem;
+    color: #333;
+    text-align: center;
+}
+
+#chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.chat-message {
+    margin-bottom: 0.5rem;
+    padding: 0.3rem;
+    border-radius: 3px;
+}
+
+.chat-message.own {
+    background: #e3f2fd;
+    text-align: right;
+}
+
+.chat-message.opponent {
+    background: #f5f5f5;
+}
+
+.chat-message .username {
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.chat-input {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#chat-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+#send-chat-btn {
+    padding: 0.5rem 1rem;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+#send-chat-btn:hover {
+    background: #1976D2;
+}
+
+/* Modals */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    min-width: 300px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content.large {
+    min-width: 500px;
+}
+
+.modal-content h3 {
+    margin-bottom: 1.5rem;
+    color: #333;
+    text-align: center;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.modal-buttons button {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.modal-buttons button:first-child {
+    background: #4CAF50;
+    color: white;
+}
+
+.modal-buttons button:last-child {
+    background: #f44336;
+    color: white;
+}
+
+.close-modal {
+    width: 100%;
+    padding: 0.8rem;
+    background: #666;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+/* Promotion Modal */
+.promotion-pieces {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.promotion-btn {
+    padding: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+}
+
+.promotion-btn:hover {
+    border-color: #4CAF50;
+    background: #f8f8f8;
+    transform: scale(1.05);
+}
+
+/* Friends Modal */
+.friends-tabs {
+    display: flex;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.8rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #666;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+    color: #4CAF50;
+    border-bottom-color: #4CAF50;
+}
+
+.tab-content {
+    min-height: 300px;
+}
+
+.friend-item, .request-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.friend-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.friend-name {
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+}
+
+.friend-elo {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.friend-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.friend-actions button {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.invite-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+.remove-btn {
+    background: #f44336;
+    color: white;
+}
+
+.accept-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+.decline-btn {
+    background: #f44336;
+    color: white;
+}
+
+/* Leaderboard */
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #4CAF50;
+    min-width: 40px;
+}
+
+.leaderboard-info {
+    flex: 1;
+    margin-left: 1rem;
+}
+
+.leaderboard-name {
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+}
+
+.leaderboard-stats {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.leaderboard-elo {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .game-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .game-sidebar {
+        flex-direction: row;
+        min-width: auto;
+        width: 100%;
+        max-width: 600px;
+        justify-content: space-around;
+    }
+    
+    .game-sidebar.left {
+        order: 2;
+    }
+    
+    .game-sidebar.right {
+        order: 3;
+    }
+    
+    #chess-board {
+        order: 1;
+        margin-bottom: 1rem;
+    }
+    
+    .game-info, .move-history, #game-chat {
+        flex: 1;
+        margin: 0 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .menu-container {
+        min-width: 90vw;
+        padding: 1.5rem;
+    }
+    
+    .menu-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .player-info {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .game-sidebar {
+        flex-direction: column;
+    }
+    
+    #chess-board {
+        grid-template-columns: repeat(8, 45px);
+        grid-template-rows: repeat(8, 45px);
+    }
+    
+    .square {
+        width: 45px;
+        height: 45px;
+        font-size: 30px;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .modal-content.large {
+        min-width: auto;
+        width: 90vw;
+    }
+    
+    .promotion-pieces {
+        grid-template-columns: 1fr;
+    }
+    
+    .friends-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        border-bottom: none;
+        border-right: 2px solid transparent;
+    }
+    
+    .tab-btn.active {
+        border-right-color: #4CAF50;
+        border-bottom-color: transparent;
+    }
+}
+
+@media (max-width: 480px) {
+    #chess-board {
+        grid-template-columns: repeat(8, 35px);
+        grid-template-rows: repeat(8, 35px);
+    }
+    
+    .square {
+        width: 35px;
+        height: 35px;
+        font-size: 24px;
+    }
+    
+    .menu-btn {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .game-controls button,
+    .game-controls select {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
