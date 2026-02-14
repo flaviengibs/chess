@@ -1,4 +1,4 @@
-# Chess Game - Multiplayer Edition
+# Chess Game
 
 A complete, feature-rich chess game with online multiplayer, social features, AI opponents, and comprehensive user management.
 
@@ -12,13 +12,13 @@ A complete, feature-rich chess game with online multiplayer, social features, AI
 - ✅ Draw conditions (insufficient material, fifty-move rule)
 - ✅ Move validation and legal move generation
 
-### 🤖 AI System (3 Difficulty Levels)
+### 🤖 AI system (3 Difficulty Levels)
 - **Easy**: Random moves with basic strategy
 - **Medium**: Minimax algorithm (depth 3) with alpha-beta pruning
 - **Hard**: Advanced minimax (depth 4) with position evaluation
 - ✅ Performance optimized for smooth gameplay
 
-### 🌐 Online Multiplayer
+### 🌐 Online multiplayer
 - ✅ **Real-time multiplayer** with WebSocket communication
 - ✅ **Random matchmaking** - find opponents automatically
 - ✅ **Private rooms** - create/join rooms with codes
@@ -26,14 +26,14 @@ A complete, feature-rich chess game with online multiplayer, social features, AI
 - ✅ **Connection status** indicators
 - ✅ **Game chat** system for communication
 
-### 👥 Social Features
+### 👥 Social features
 - ✅ **Friends system** - send/accept friend requests
 - ✅ **Friend invitations** to private games
 - ✅ **ELO leaderboard** - top 50 players ranking
 - ✅ **Player profiles** with statistics
 - ✅ **In-game chat** during multiplayer matches
 
-### 🏆 User Account System
+### 🏆 User account system
 - ✅ **User registration/login** with password protection
 - ✅ **ELO rating system** (starts at 1200)
 - ✅ **Comprehensive statistics** (games played, wins, losses, draws)
@@ -48,53 +48,53 @@ A complete, feature-rich chess game with online multiplayer, social features, AI
 - ✅ **Game mode indicators** (AI vs Multiplayer)
 - ✅ **Player turn indicators** and active player highlighting
 
-## 🎯 How to Play
+## 🎯 How to play
 
-### Getting Started
+### Getting started
 1. **Register/Login** - Create account or use existing credentials
-2. **Choose Game Mode**:
+2. **Choose game mode**:
    - **Play vs AI** - Single player against computer
-   - **Play Online** - Random matchmaking
-   - **Create Private Room** - Play with friends
-   - **Join Room** - Enter room code to join friend's game
+   - **Play online** - Random matchmaking
+   - **Create private room** - Play with friends
+   - **Join room** - Enter room code to join friend's game
 
-### Game Modes
+### Game modes
 
-#### 🤖 AI Mode
+#### 🤖 AI mode
 - Select difficulty (Easy/Medium/Hard)
 - Play as White pieces
 - AI responds automatically
 - ELO rating updates based on results
 
-#### 🌐 Multiplayer Mode
+#### 🌐 Multiplayer mode
 - Real-time gameplay with other players
 - Chat with opponent during game
 - Both players' ELO ratings update
 - Connection status monitoring
 
-### 🏰 Pawn Promotion
+### 🏰 Pawn promotion
 - When pawn reaches end rank, choose promotion piece
 - Options: Queen, Rook, Bishop, Knight
 - Modal popup for easy selection
 - Works in both AI and multiplayer modes
 
-### 👥 Social Features
+### 👥 Social features
 - **Friends**: Add friends, view their stats, invite to games
 - **Leaderboard**: See top players ranked by ELO
 - **Profile**: View your statistics and ranking
 
-## 🛠️ Technical Implementation
+## 🛠️ Technical implementation
 
 ### Architecture
 ```
 ├── Frontend (Pure JavaScript/HTML/CSS)
-│   ├── Chess Engine (complete rules)
-│   ├── AI System (minimax with pruning)
+│   ├── Chess engine (complete rules)
+│   ├── AI system (minimax with pruning)
 │   ├── Multiplayer Manager (WebSocket)
-│   ├── Social Manager (friends/leaderboard)
-│   ├── Authentication System
-│   └── Game Controller
-└── Mock WebSocket Server (for demo)
+│   ├── Social manager (friends/leaderboard)
+│   ├── Authentication system
+│   └── Game controller
+└── WebSocket server
 ```
 
 ### Key Components
