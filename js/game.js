@@ -5,9 +5,10 @@ class ChessGame {
         this.selectedSquare = null;
         this.validMoves = [];
         this.isPlayerTurn = true;
-        this.gameMode = 'ai'; // 'ai' or 'multiplayer'
+        this.gameMode = 'ai'; // 'ai', 'multiplayer', or 'local'
         this.playerColor = 'white';
         this.pendingPromotion = null; // Store promotion move until piece is selected
+        this.boardFlipped = false; // For local 2-player mode
         
         this.pieceSymbols = {
             'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
@@ -24,6 +25,7 @@ class ChessGame {
         this.playerColor = playerColor;
         this.opponentInfo = opponentInfo;
         this.isPlayerTurn = playerColor === 'white';
+        this.boardFlipped = false;
         
         // Rebuild board with correct orientation for this player
         this.initializeBoard();
@@ -36,6 +38,17 @@ class ChessGame {
         this.gameMode = 'ai';
         this.playerColor = 'white';
         this.isPlayerTurn = true;
+        this.boardFlipped = false;
+        
+        this.newGame();
+        this.updateDisplay();
+    }
+
+    startLocalGame() {
+        this.gameMode = 'local';
+        this.playerColor = 'white'; // Not really used in local mode
+        this.isPlayerTurn = true;
+        this.boardFlipped = false;
         
         this.newGame();
         this.updateDisplay();
@@ -45,8 +58,13 @@ class ChessGame {
         const board = document.getElementById('chess-board');
         board.innerHTML = '';
 
-        // Black player sees board rotated 180 degrees (their pieces at bottom)
-        const flipBoard = this.gameMode === 'multiplayer' && this.playerColor === 'black';
+        // Determine if board should be flipped
+        let flipBoard = false;
+        if (this.gameMode === 'multiplayer' && this.playerColor === 'black') {
+            flipBoard = true;
+        } else if (this.gameMode === 'local' && this.boardFlipped) {
+            flipBoard = true;
+        }
 
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
@@ -327,6 +345,15 @@ class ChessGame {
         if (this.engine.makeMove(fromRow, fromCol, toRow, toCol, promotionPiece)) {
             this.clearSelection();
             this.updateDisplay();
+            
+            // Handle local 2-player mode - flip board after each move
+            if (this.gameMode === 'local') {
+                this.boardFlipped = !this.boardFlipped;
+                setTimeout(() => {
+                    this.initializeBoard();
+                    this.updateDisplay();
+                }, 300); // Small delay for smooth transition
+            }
             
             // Handle multiplayer move
             if (this.gameMode === 'multiplayer' && window.multiplayerManager) {

@@ -52,6 +52,7 @@ function initializeEventListeners() {
     
     // Menu event listeners
     const playAiBtn = document.getElementById('play-ai-btn');
+    const playLocalBtn = document.getElementById('play-local-btn');
     const playOnlineBtn = document.getElementById('play-online-btn');
     const createRoomBtn = document.getElementById('create-room-btn');
     const joinRoomBtn = document.getElementById('join-room-btn');
@@ -60,6 +61,7 @@ function initializeEventListeners() {
     const profileBtn = document.getElementById('profile-btn');
     
     if (playAiBtn) playAiBtn.addEventListener('click', startAIGame);
+    if (playLocalBtn) playLocalBtn.addEventListener('click', startLocalGame);
     if (playOnlineBtn) playOnlineBtn.addEventListener('click', findOnlineGame);
     if (createRoomBtn) createRoomBtn.addEventListener('click', createPrivateRoom);
     if (joinRoomBtn) joinRoomBtn.addEventListener('click', showJoinRoomModal);
@@ -324,9 +326,22 @@ function startAIGame() {
     document.getElementById('game-screen').classList.remove('hidden');
     document.body.classList.add('ai-mode');
     document.body.classList.remove('online-mode');
+    document.body.classList.remove('local-mode');
     
     initializeGame();
     chessGame.startAIGame();
+}
+
+function startLocalGame() {
+    document.getElementById('main-menu').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    document.body.classList.add('local-mode');
+    document.body.classList.remove('ai-mode');
+    document.body.classList.remove('online-mode');
+    
+    initializeGame();
+    chessGame.startLocalGame();
+    showNotification('Local 2-player mode - board will flip after each move', 'info');
 }
 
 function findOnlineGame() {
