@@ -2,6 +2,15 @@
 
 a full-featured online chess game with real-time multiplayer, AI opponent, and secure authentication.
 
+## how to play online
+go on https://chess-o3ub.onrender.com/
+- create an account with username + password 
+- click register
+- enter the same username and password combination
+- click login
+- then click play online (this will wait for an opponent, but as no one sees my projects, no one will probably ever play so...)
+- OR click create private room and share the code with someone you want to play with
+
 ## what's this?
 
 this is a complete chess game you can play in your browser. play against the computer, challenge your friends online, or find random opponents through matchmaking. everything runs in real-time with WebSockets, and your account data is securely stored on the server.
@@ -29,7 +38,7 @@ this is a complete chess game you can play in your browser. play against the com
 - persistent data storage
 
 ### social features
-- friend system (send/accept requests)
+- friend system (send/accept requests, to see new friends and friend requests, refresh the friends menu popup by closing it and reopening it)
 - global leaderboard (top 50 players)
 - player profiles with stats
 - invite friends to private games
