@@ -2,6 +2,9 @@
 node_modules/
 server/node_modules/
 
+# User data (contains passwords)
+server/users.json
+
 # Test files (optional - include if you want tests in repo)
 # server/tests/
 # *.test.js

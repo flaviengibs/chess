@@ -9,6 +9,7 @@ const ChessValidator = require('./chess-validator');
 const EloCalculator = require('./elo-calculator');
 const ChessEngine = require('./chess-engine');
 const FriendsManager = require('./friends-manager');
+const UserManager = require('./user-manager');
 
 // Configuration
 const PORT = process.env.PORT || 3000;
@@ -23,6 +24,9 @@ app.use(cors({
   origin: CLIENT_URL,
   credentials: true
 }));
+
+// Parse JSON bodies
+app.use(express.json());
 
 // Serve static files from the root directory (parent of server/)
 app.use(express.static(path.join(__dirname, '..')));
@@ -42,6 +46,89 @@ const connectionManager = new ConnectionManager(roomManager);
 const chessValidator = new ChessValidator();
 const eloCalculator = new EloCalculator();
 const friendsManager = new FriendsManager();
+const userManager = new UserManager();
+
+/**
+ * REST API Endpoints for Authentication
+ */
+
+// Register endpoint
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    console.log(`[API] Register request: ${username}`);
+    
+    const result = await userManager.register(username, password);
+    
+    if (result.success) {
+      res.status(201).json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('[API] Register error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Login endpoint
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    console.log(`[API] Login request: ${username}`);
+    
+    const result = await userManager.login(username, password);
+    
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(401).json(result);
+    }
+  } catch (error) {
+    console.error('[API] Login error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get all users (public data only)
+app.get('/api/users', (req, res) => {
+  try {
+    const users = userManager.getAllUsersPublicData();
+    res.status(200).json({ success: true, users });
+  } catch (error) {
+    console.error('[API] Get users error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get leaderboard
+app.get('/api/leaderboard', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const leaderboard = userManager.getLeaderboard(limit);
+    res.status(200).json({ success: true, leaderboard });
+  } catch (error) {
+    console.error('[API] Get leaderboard error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get user profile
+app.get('/api/user/:username', (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = userManager.getUserPublicData(username);
+    
+    if (user) {
+      res.status(200).json({ success: true, user });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found' });
+    }
+  } catch (error) {
+    console.error('[API] Get user error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 /**
  * Initialize a new game state
@@ -105,6 +192,13 @@ function handleGameEnd(room, reason, winner) {
   // Update ELO ratings
   room.whitePlayer.elo += whiteEloChange;
   room.blackPlayer.elo += blackEloChange;
+  
+  // Save to server database
+  const whiteResultStr = whiteResult === 1.0 ? 'win' : whiteResult === 0.0 ? 'loss' : 'draw';
+  const blackResultStr = blackResult === 1.0 ? 'win' : blackResult === 0.0 ? 'loss' : 'draw';
+  
+  userManager.updateUserStats(room.whitePlayer.username, whiteResultStr, room.whitePlayer.elo);
+  userManager.updateUserStats(room.blackPlayer.username, blackResultStr, room.blackPlayer.elo);
   
   // Emit game-ended event to both players
   const gameEndData = {

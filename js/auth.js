@@ -1,150 +1,174 @@
 class AuthSystem {
     constructor() {
-        this.users = JSON.parse(localStorage.getItem('chessUsers') || '{}');
+        this.users = {}; // Synced from server
         this.currentUser = null;
-        console.log('AuthSystem initialized, users:', Object.keys(this.users));
+        this.serverUrl = window.CHESS_SERVER_URL || 'http://localhost:3000';
+        console.log('AuthSystem initialized with server:', this.serverUrl);
+        
+        // Load users from server on init
+        this.loadUsersFromServer();
     }
 
-    register(username, password) {
+    /**
+     * Load all users from server (for leaderboard, friend search, etc.)
+     */
+    async loadUsersFromServer() {
+        try {
+            const response = await fetch(`${this.serverUrl}/api/users`);
+            const data = await response.json();
+            
+            if (data.success) {
+                this.users = data.users;
+                console.log(`Loaded ${Object.keys(this.users).length} users from server`);
+            }
+        } catch (error) {
+            console.error('Error loading users from server:', error);
+        }
+    }
+
+    /**
+     * Register a new user (server-side)
+     */
+    async register(username, password) {
         console.log('Register attempt:', username);
         
-        if (this.users[username]) {
-            return { success: false, message: 'Username already exists' };
+        try {
+            console.log('Sending register request to:', `${this.serverUrl}/api/register`);
+            
+            const response = await fetch(`${this.serverUrl}/api/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            console.log('Register response status:', response.status);
+            const data = await response.json();
+            console.log('Register response data:', data);
+            
+            if (data.success) {
+                console.log('User registered successfully:', username);
+                // Reload users list
+                await this.loadUsersFromServer();
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Error registering user:', error);
+            return { success: false, message: 'Failed to connect to server. Is the server running?' };
         }
-
-        if (username.length < 3) {
-            return { success: false, message: 'Username must be at least 3 characters' };
-        }
-
-        if (password.length < 4) {
-            return { success: false, message: 'Password must be at least 4 characters' };
-        }
-
-        this.users[username] = {
-            password: this.hashPassword(password),
-            elo: 1200,
-            gamesPlayed: 0,
-            wins: 0,
-            losses: 0,
-            draws: 0,
-            createdAt: new Date().toISOString()
-        };
-
-        this.saveUsers();
-        console.log('User registered successfully:', username);
-        return { success: true, message: 'Account created successfully' };
     }
 
-    login(username, password) {
+    /**
+     * Login user (server-side authentication)
+     */
+    async login(username, password) {
         console.log('Login attempt:', username);
         
-        const user = this.users[username];
-        if (!user) {
-            return { success: false, message: 'Username not found' };
+        try {
+            const response = await fetch(`${this.serverUrl}/api/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.currentUser = data.user;
+                
+                // Store in localStorage for session persistence
+                localStorage.setItem('currentUser', JSON.stringify(data.user));
+                
+                console.log('Login successful:', username);
+                
+                // Reload users list
+                await this.loadUsersFromServer();
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Error logging in:', error);
+            return { success: false, message: 'Failed to connect to server' };
         }
-
-        if (user.password !== this.hashPassword(password)) {
-            return { success: false, message: 'Invalid password' };
-        }
-
-        this.currentUser = {
-            username,
-            ...user
-        };
-
-        console.log('Login successful:', username);
-        return { success: true, message: 'Login successful', user: this.currentUser };
     }
 
+    /**
+     * Logout user
+     */
     logout() {
         console.log('User logged out:', this.currentUser?.username);
         this.currentUser = null;
+        localStorage.removeItem('currentUser');
     }
 
-    updateElo(result, opponentElo = 1200) {
-        if (!this.currentUser) {
-            console.log('No current user for ELO update');
-            return;
-        }
-
-        const K = 32; // K-factor for Elo calculation
-        const currentElo = this.currentUser.elo;
-        
-        let actualScore;
-        switch(result) {
-            case 'win':
-                actualScore = 1;
-                this.currentUser.wins++;
-                break;
-            case 'loss':
-                actualScore = 0;
-                this.currentUser.losses++;
-                break;
-            case 'draw':
-                actualScore = 0.5;
-                this.currentUser.draws++;
-                break;
-        }
-
-        // Calculate expected score
-        const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - currentElo) / 400));
-        
-        // Calculate new ELO
-        const eloChange = Math.round(K * (actualScore - expectedScore));
-        const newElo = Math.max(100, currentElo + eloChange); // Minimum Elo of 100
-        
-        console.log(`ELO Update: ${result} vs ${opponentElo} ELO`);
-        console.log(`Old ELO: ${currentElo}, Change: ${eloChange > 0 ? '+' : ''}${eloChange}, New ELO: ${newElo}`);
-        
-        this.currentUser.elo = newElo;
-        this.currentUser.gamesPlayed++;
-
-        // Update stored user data
-        this.users[this.currentUser.username] = {
-            password: this.users[this.currentUser.username].password,
-            elo: this.currentUser.elo,
-            gamesPlayed: this.currentUser.gamesPlayed,
-            wins: this.currentUser.wins,
-            losses: this.currentUser.losses,
-            draws: this.currentUser.draws,
-            createdAt: this.users[this.currentUser.username].createdAt
-        };
-
-        this.saveUsers();
-        console.log('ELO updated:', this.currentUser.username, 'New ELO:', this.currentUser.elo);
-        
-        // Show ELO change notification
-        const changeText = eloChange > 0 ? `+${eloChange}` : `${eloChange}`;
-        showNotification(`ELO ${changeText} (${newElo})`, eloChange > 0 ? 'success' : 'warning');
-        
-        return eloChange;
-    }
-
-    hashPassword(password) {
-        // Simple hash function for demo purposes
-        // In production, use proper hashing like bcrypt
-        let hash = 0;
-        for (let i = 0; i < password.length; i++) {
-            const char = password.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32-bit integer
-        }
-        return hash.toString();
-    }
-
-    saveUsers() {
+    /**
+     * Try to restore session from localStorage
+     */
+    async restoreSession() {
         try {
-            localStorage.setItem('chessUsers', JSON.stringify(this.users));
-            console.log('Users saved to localStorage');
+            const stored = localStorage.getItem('currentUser');
+            if (stored) {
+                const user = JSON.parse(stored);
+                
+                // Verify user still exists on server and get updated data
+                const response = await fetch(`${this.serverUrl}/api/user/${user.username}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.currentUser = data.user;
+                    console.log('Session restored:', user.username);
+                    return true;
+                } else {
+                    // User no longer exists, clear session
+                    localStorage.removeItem('currentUser');
+                }
+            }
         } catch (error) {
-            console.error('Error saving users:', error);
+            console.error('Error restoring session:', error);
+            localStorage.removeItem('currentUser');
+        }
+        return false;
+    }
+
+    /**
+     * Update user stats after game (sync with server)
+     */
+    async updateUserStats(username) {
+        try {
+            const response = await fetch(`${this.serverUrl}/api/user/${username}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update local cache
+                this.users[username] = data.user;
+                
+                // Update current user if it's them
+                if (this.currentUser && this.currentUser.username === username) {
+                    this.currentUser = data.user;
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                }
+                
+                console.log('User stats updated:', username);
+            }
+        } catch (error) {
+            console.error('Error updating user stats:', error);
         }
     }
 
+    /**
+     * Get current user
+     */
     getCurrentUser() {
         return this.currentUser;
     }
 
+    /**
+     * Get user stats
+     */
     getUserStats() {
         if (!this.currentUser) return null;
         
@@ -154,25 +178,18 @@ class AuthSystem {
             gamesPlayed: this.currentUser.gamesPlayed,
             wins: this.currentUser.wins,
             losses: this.currentUser.losses,
-            draws: this.currentUser.draws,
-            winRate: this.currentUser.gamesPlayed > 0 ? 
-                Math.round((this.currentUser.wins / this.currentUser.gamesPlayed) * 100) : 0
+            draws: this.currentUser.draws
         };
     }
-    
-    updateUserElo(newElo) {
-        if (!this.currentUser) return;
-        
-        this.currentUser.elo = newElo;
-        this.users[this.currentUser.username].elo = newElo;
-        this.saveUsers();
-        
-        // Update display if on game screen
-        const eloElements = document.querySelectorAll('[id$="-player-elo"]');
-        eloElements.forEach(el => {
-            if (el.textContent.includes(this.currentUser.username)) {
-                el.textContent = `ELO: ${newElo}`;
-            }
-        });
+
+    /**
+     * Save users (no-op, server handles this now)
+     */
+    saveUsers() {
+        // Server-side storage, no need to save locally
+        console.log('Users are managed by server');
     }
 }
+
+// AuthSystem will be instantiated by app.js
+// Don't create global instance here to avoid timing issues

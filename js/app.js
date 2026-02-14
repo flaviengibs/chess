@@ -128,11 +128,12 @@ function initializeEventListeners() {
 }
 
 // Authentication Functions
-function handleLogin() {
+async function handleLogin() {
     console.log('Login button clicked');
     
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('login-btn');
     
     if (!usernameInput || !passwordInput) {
         console.error('Username or password input not found');
@@ -156,8 +157,17 @@ function handleLogin() {
         return;
     }
     
-    const result = authSystem.login(username, password);
+    // Disable button during request
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Logging in...';
+    showAuthMessage('Connecting to server...', 'info');
+    
+    const result = await authSystem.login(username, password);
     console.log('Login result:', result);
+    
+    // Re-enable button
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Login';
     
     if (result.success) {
         showAuthMessage(result.message, 'success');
@@ -169,11 +179,12 @@ function handleLogin() {
     }
 }
 
-function handleRegister() {
+async function handleRegister() {
     console.log('Register button clicked');
     
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const registerBtn = document.getElementById('register-btn');
     
     if (!usernameInput || !passwordInput) {
         console.error('Username or password input not found');
@@ -197,8 +208,17 @@ function handleRegister() {
         return;
     }
     
-    const result = authSystem.register(username, password);
+    // Disable button during request
+    registerBtn.disabled = true;
+    registerBtn.textContent = 'Creating account...';
+    showAuthMessage('Connecting to server...', 'info');
+    
+    const result = await authSystem.register(username, password);
     console.log('Register result:', result);
+    
+    // Re-enable button
+    registerBtn.disabled = false;
+    registerBtn.textContent = 'Register';
     
     showAuthMessage(result.message, result.success ? 'success' : 'error');
     
