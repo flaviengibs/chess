@@ -361,8 +361,10 @@ class ChessGame {
                 this.isPlayerTurn = false;
             }
             
-            // Handle AI move
-            if (this.gameMode === 'ai' && this.engine.gameState === 'playing') {
+            // Handle AI move - only trigger when it's the AI's turn (not the player's color)
+            if (this.gameMode === 'ai' && 
+                this.engine.gameState === 'playing' &&
+                this.engine.currentPlayer !== this.playerColor) {
                 this.isPlayerTurn = false;
                 setTimeout(() => this.makeAIMove(), 500);
             }
@@ -520,7 +522,10 @@ class ChessGame {
                 opponentElo = this.opponentInfo.elo;
             }
             
-            window.authSystem.updateElo(result, opponentElo);
+            // Update ELO if method exists
+            if (typeof window.authSystem.updateElo === 'function') {
+                window.authSystem.updateElo(result, opponentElo);
+            }
             
             // Update player info display
             const stats = window.authSystem.getUserStats();

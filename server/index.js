@@ -15,15 +15,33 @@ const UserManager = require('./user-manager');
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
+// All allowed origins
+const ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'https://flaviengibs.github.io',
+    'https://flaviengibs.github.io/chess',
+    'https://chess.gibbons.fr',
+    CLIENT_URL
+].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
 
 // Configure CORS
-app.use(cors({
-  origin: CLIENT_URL,
-  credentials: true
-}));
+const corsOptions = {
+    origin: function(origin, callback) {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            return callback(null, true);
+        }
+        console.warn(`CORS blocked: ${origin}`);
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+};
+app.use(cors(corsOptions));
 
 // Parse JSON bodies
 app.use(express.json());
@@ -33,11 +51,16 @@ app.use(express.static(path.join(__dirname, '..')));
 
 // Initialize Socket.IO with CORS configuration
 const io = new Server(server, {
-  cors: {
-    origin: CLIENT_URL,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+    cors: {
+        origin: function(origin, callback) {
+            if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+                return callback(null, true);
+            }
+            return callback(new Error('Not allowed by CORS'));
+        },
+        methods: ['GET', 'POST'],
+        credentials: true
+    }
 });
 
 // Initialize managers
