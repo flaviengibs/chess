@@ -449,7 +449,7 @@ class ChessAI {
             for (let c = 0; c < 8; c++) {
                 const piece = engine.getPieceAt(r, c);
                 if (piece && engine.isWhitePiece(piece) === isWhite) {
-                    const moves = engine.getValidMovesForPiece(r, c);
+                    const moves = engine.getValidMoves(r, c);
                     if (moves.some(move => move.row === row && move.col === col)) {
                         count++;
                     }
@@ -492,7 +492,7 @@ class ChessAI {
             for (let c = 0; c < 8; c++) {
                 const piece = engine.getPieceAt(r, c);
                 if (piece && engine.isWhitePiece(piece) === isWhite) {
-                    const moves = engine.getValidMovesForPiece(r, c);
+                    const moves = engine.getValidMoves(r, c);
                     if (moves.some(move => move.row === row && move.col === col)) {
                         count++;
                     }
