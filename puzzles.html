@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess puzzles</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; }
+
+        .puzzle-layout {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        .puzzle-main, .puzzle-side {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+
+        .puzzle-side { display: flex; flex-direction: column; gap: 16px; }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .top-bar h1 { font-size: 1.5rem; color: #333; }
+        .back-btn {
+            padding: 8px 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: #5568d3; }
+
+        .difficulty-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-beginner     { background: #4caf50; color: white; }
+        .badge-intermediate { background: #ff9800; color: white; }
+        .badge-advanced     { background: #f44336; color: white; }
+
+        .status-box {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .status-thinking  { background: #e3f2fd; color: #1565c0; }
+        .status-correct   { background: #e8f5e9; color: #2e7d32; }
+        .status-incorrect { background: #ffebee; color: #c62828; }
+
+        #puzzleBoard {
+            width: 100%;
+            max-width: 560px;
+            aspect-ratio: 1;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            border: 3px solid #333;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.4rem, 4vw, 2.8rem);
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+        .square.light { background-color: var(--light-square, #f0d9b5); }
+        .square.dark  { background-color: var(--dark-square,  #b58863); }
+        .square.selected { background-color: #7fc97f !important; }
+        .square.legal-move::after {
+            content: '';
+            position: absolute;
+            width: 28%;
+            height: 28%;
+            background: rgba(0,0,0,0.28);
+            border-radius: 50%;
+        }
+        .square.legal-capture::after {
+            content: '';
+            position: absolute;
+            width: 88%;
+            height: 88%;
+            border: 3px solid rgba(200,0,0,0.55);
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+        .square.last-move { background-color: rgba(255,255,0,0.45) !important; }
+
+        .puzzle-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+        .puzzle-controls button {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-primary   { background: #667eea; color: white; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .btn-primary:hover   { background: #5568d3; }
+        .btn-secondary:hover { background: #ccc; }
+
+        .hint-box, .solution-box {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+        .hint-box     { background: #fff9c4; border-left: 4px solid #f9a825; }
+        .solution-box { background: #e8f5e9; border-left: 4px solid #4caf50; }
+        .hint-box.show, .solution-box.show { display: block; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-card {
+            text-align: center;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .stat-value { font-size: 2rem; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.8rem; color: #777; margin-top: 2px; }
+
+        .diff-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+        .diff-buttons button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .history-list { max-height: 220px; overflow-y: auto; }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 4px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.85rem;
+        }
+        .solved-yes { color: #4caf50; font-weight: bold; }
+        .solved-no  { color: #f44336; }
+
+        @media (max-width: 860px) {
+            .puzzle-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="puzzle-layout">
+
+    <!-- Board section -->
+    <div class="puzzle-main">
+        <div class="top-bar">
+            <h1 id="puzzleTitle">Daily puzzle</h1>
+            <a href="index.html" class="back-btn">← Main menu</a>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <span id="puzzleBadge" class="difficulty-badge badge-beginner">Beginner</span>
+            <span id="puzzleTheme" style="color:#777;font-size:0.9rem;"></span>
+        </div>
+
+        <div class="status-box status-thinking" id="puzzleStatus">Find the best move</div>
+
+        <div id="puzzleBoard"></div>
+
+        <div class="puzzle-controls">
+            <button class="btn-primary"   id="newPuzzleBtn">New puzzle</button>
+            <button class="btn-secondary" id="hintBtn">Hint</button>
+            <button class="btn-secondary" id="solutionBtn">Solution</button>
+            <button class="btn-secondary" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="hint-box"     id="hintBox"><strong>Hint:</strong> <span id="hintText"></span></div>
+        <div class="solution-box" id="solutionBox"><strong>Solution:</strong> <span id="solutionText"></span></div>
+
+        <p id="puzzleDesc" style="margin-top:12px;color:#555;font-size:0.9rem;"></p>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="puzzle-side">
+
+        <div>
+            <h3 style="margin-bottom:10px;">Your stats</h3>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statRating">1200</div>
+                    <div class="stat-label">Puzzle rating</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statSolved">0</div>
+                    <div class="stat-label">Solved</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 style="margin-bottom:10px;">Difficulty</h3>
+            <div class="diff-buttons">
+                <button style="background:#4caf50;color:white;" onclick="loadByDifficulty('beginner')">Beginner</button>
+                <button style="background:#ff9800;color:white;" onclick="loadByDifficulty('intermediate')">Intermediate</button>
+                <button style="background:#f44336;color:white;" onclick="loadByDifficulty('advanced')">Advanced</button>
+            </div>
+        </div>
+
+        <div>
+            <h3 style="margin-bottom:8px;">Recent puzzles</h3>
+            <div class="history-list" id="historyList">
+                <p style="color:#aaa;font-size:0.85rem;">No history yet</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="js/chess-engine.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/puzzle_data.js"></script>
+<script src="js/enhancements.js"></script>
+<script>
+    let pm, engine, puzzle, selected = null, attempts = 0;
+
+    function init() {
+        pm = new PuzzleManager();
+        loadPuzzle(pm.daily());
+        updateStats();
+        renderHistory();
+    }
+
+    function loadPuzzle(p) {
+        puzzle   = p;
+        selected = null;
+        attempts = 0;
+        engine   = new ChessEngine();
+        engine.loadFEN(p.fen);
+
+        // In Lichess puzzles the FEN is before the opponent's last move.
+        // Apply that move first so the player sees the position they must solve.
+        if (p.opponentMove) {
+            const om = p.opponentMove;
+            engine.makeMove(om.from.row, om.from.col, om.to.row, om.to.col, om.promotion);
+        }
+
+        renderBoard();
+        updateInfo(p);
+        hideHelp();
+
+        const turn = engine.currentPlayer === 'white' ? 'White' : 'Black';
+        setStatus(`${turn} to move – find the best move`, 'thinking');
+    }
+
+    function loadByDifficulty(d) {
+        const p = pm.byDifficulty(d);
+        if (!p) { alert('No puzzles for this difficulty yet.'); return; }
+        document.getElementById('puzzleTitle').textContent = d.charAt(0).toUpperCase() + d.slice(1) + ' puzzle';
+        loadPuzzle(p);
+    }
+
+    function renderBoard() {
+        const board = document.getElementById('puzzleBoard');
+        board.innerHTML = '';
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const sq = document.createElement('div');
+                sq.className = 'square ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+                sq.dataset.row = r;
+                sq.dataset.col = c;
+                const piece = engine.getPieceAt(r, c);
+                if (piece) sq.textContent = pieceSymbol(piece);
+                sq.addEventListener('click', () => onSquareClick(r, c));
+                board.appendChild(sq);
+            }
+        }
+    }
+
+    function onSquareClick(r, c) {
+        if (engine.gameState !== 'playing') return;
+
+        if (selected) {
+            const move = { from: selected, to: {row:r, col:c} };
+            if (!tryMove(move)) {
+                // Reselect if clicking own piece
+                const p = engine.getPieceAt(r, c);
+                if (p && isCurrentPlayer(p)) { selected = {row:r,col:c}; highlight(); }
+                else { selected = null; clearHighlights(); }
+            }
+        } else {
+            const p = engine.getPieceAt(r, c);
+            if (p && isCurrentPlayer(p)) {
+                selected = {row:r, col:c};
+                highlight();
+            }
+        }
+    }
+
+    function isCurrentPlayer(piece) {
+        return engine.currentPlayer === 'white'
+            ? piece === piece.toUpperCase()
+            : piece === piece.toLowerCase();
+    }
+
+    function tryMove(move) {
+        const sol = puzzle.solution;
+        const correct = sol &&
+            move.from.row === sol.from.row && move.from.col === sol.from.col &&
+            move.to.row   === sol.to.row   && move.to.col   === sol.to.col;
+
+        if (correct) {
+            engine.makeMove(move.from.row, move.from.col, move.to.row, move.to.col);
+            selected = null;
+            renderBoard();
+            setStatus('Correct! Well done 🎉', 'correct');
+            pm.award(puzzle.id);
+            pm.addHistory(puzzle, true);
+            updateStats();
+            renderHistory();
+            return true;
+        }
+
+        // Check if move is at least legal
+        const legal = engine.getValidMoves(move.from.row, move.from.col)
+                            .some(m => m.row === move.to.row && m.col === move.to.col);
+        if (legal) {
+            attempts++;
+            setStatus(`Not the best move – try again! (attempt ${attempts})`, 'incorrect');
+            if (attempts >= 3) setStatus('Try using the hint button!', 'incorrect');
+        }
+        return false;
+    }
+
+    function highlight() {
+        clearHighlights();
+        if (!selected) return;
+        const sq = document.querySelector(`[data-row="${selected.row}"][data-col="${selected.col}"]`);
+        if (sq) sq.classList.add('selected');
+        engine.getValidMoves(selected.row, selected.col).forEach(m => {
+            const s = document.querySelector(`[data-row="${m.row}"][data-col="${m.col}"]`);
+            if (!s) return;
+            s.classList.add(engine.getPieceAt(m.row, m.col) ? 'legal-capture' : 'legal-move');
+        });
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll('.square').forEach(s =>
+            s.classList.remove('selected','legal-move','legal-capture'));
+    }
+
+    function updateInfo(p) {
+        const badge = document.getElementById('puzzleBadge');
+        badge.textContent = p.difficulty;
+        badge.className   = 'difficulty-badge badge-' + p.difficulty;
+        document.getElementById('puzzleTheme').textContent = `${p.theme}  ·  Rating ${p.rating}`;
+        document.getElementById('puzzleDesc').textContent  = p.description || '';
+    }
+
+    function setStatus(msg, type) {
+        const el = document.getElementById('puzzleStatus');
+        el.textContent = msg;
+        el.className   = 'status-box status-' + type;
+    }
+
+    function hideHelp() {
+        document.getElementById('hintBox').classList.remove('show');
+        document.getElementById('solutionBox').classList.remove('show');
+    }
+
+    function updateStats() {
+        document.getElementById('statRating').textContent = pm.rating;
+        document.getElementById('statSolved').textContent = pm.solved.size;
+    }
+
+    function renderHistory() {
+        const h = pm.getHistory();
+        const el = document.getElementById('historyList');
+        if (!h.length) { el.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">No history yet</p>'; return; }
+        el.innerHTML = h.map(item => `
+            <div class="history-item">
+                <div>
+                    <div>${item.theme}</div>
+                    <small style="color:#aaa">${new Date(item.date).toLocaleDateString()}</small>
+                </div>
+                <span class="${item.solved ? 'solved-yes' : 'solved-no'}">${item.solved ? '✓ Solved' : '✗ Failed'}</span>
+            </div>`).join('');
+    }
+
+    const SYMBOLS = {
+        white: {k:'♔',q:'♕',r:'♖',b:'♗',n:'♘',p:'♙'},
+        black: {k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'},
+    };
+    function pieceSymbol(piece) {
+        if (!piece) return '';
+        const color = piece === piece.toUpperCase() ? 'white' : 'black';
+        return SYMBOLS[color][piece.toLowerCase()] || '';
+    }
+
+    // Button wiring
+    document.getElementById('newPuzzleBtn').addEventListener('click', () => {
+        document.getElementById('puzzleTitle').textContent = 'Daily puzzle';
+        loadPuzzle(pm.daily());
+    });
+    document.getElementById('hintBtn').addEventListener('click', () => {
+        document.getElementById('hintText').textContent = puzzle.hint || 'Look for a forcing move.';
+        document.getElementById('hintBox').classList.add('show');
+    });
+    document.getElementById('solutionBtn').addEventListener('click', () => {
+        const files = 'abcdefgh', ranks = '87654321';
+        const sol = puzzle.solution;
+        const from = files[sol.from.col] + ranks[sol.from.row];
+        const to   = files[sol.to.col]   + ranks[sol.to.row];
+        const promo = sol.promotion ? '=' + sol.promotion.toUpperCase() : '';
+        document.getElementById('solutionText').textContent = `${from}${to}${promo}`;
+        document.getElementById('solutionBox').classList.add('show');
+        pm.addHistory(puzzle, false);
+        renderHistory();
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => loadPuzzle(puzzle));
+
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

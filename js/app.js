@@ -3,130 +3,149 @@ let authSystem;
 let chessGame;
 let multiplayerManager;
 let socialManager;
+let themeManager;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing app...');
-    
     try {
-        authSystem = new AuthSystem();
+        authSystem      = new AuthSystem();
         multiplayerManager = new MultiplayerManager();
-        socialManager = new SocialManager();
-        
-        // Make globally accessible
-        window.authSystem = authSystem;
+        socialManager   = new SocialManager();
+        themeManager    = typeof ThemeManager !== 'undefined' ? new ThemeManager() : null;
+
+        window.authSystem         = authSystem;
         window.multiplayerManager = multiplayerManager;
-        window.socialManager = socialManager;
-        
+        window.socialManager      = socialManager;
+
         initializeEventListeners();
         showLoginScreen();
-        
-        console.log('App initialized successfully');
     } catch (error) {
         console.error('Error initializing app:', error);
     }
 });
 
 function initializeEventListeners() {
-    console.log('Setting up event listeners...');
-    
-    // Auth event listeners
-    const loginBtn = document.getElementById('login-btn');
-    const registerBtn = document.getElementById('register-btn');
-    const menuLogoutBtn = document.getElementById('menu-logout-btn');
-    
-    if (loginBtn) {
-        loginBtn.addEventListener('click', handleLogin);
-        console.log('Login button listener added');
-    }
-    
-    if (registerBtn) {
-        registerBtn.addEventListener('click', handleRegister);
-        console.log('Register button listener added');
-    }
-    
-    if (menuLogoutBtn) {
-        menuLogoutBtn.addEventListener('click', handleLogout);
-        console.log('Logout button listener added');
-    }
-    
-    // Menu event listeners
-    const playAiBtn = document.getElementById('play-ai-btn');
-    const playLocalBtn = document.getElementById('play-local-btn');
+    // Auth
+    const loginBtn     = document.getElementById('login-btn');
+    const registerBtn  = document.getElementById('register-btn');
+    const logoutBtn    = document.getElementById('menu-logout-btn');
+    if (loginBtn)    loginBtn.addEventListener('click', handleLogin);
+    if (registerBtn) registerBtn.addEventListener('click', handleRegister);
+    if (logoutBtn)   logoutBtn.addEventListener('click', handleLogout);
+
+    // Menu
+    const playAiBtn     = document.getElementById('play-ai-btn');
+    const playLocalBtn  = document.getElementById('play-local-btn');
     const playOnlineBtn = document.getElementById('play-online-btn');
     const createRoomBtn = document.getElementById('create-room-btn');
-    const joinRoomBtn = document.getElementById('join-room-btn');
-    const friendsBtn = document.getElementById('friends-btn');
-    const leaderboardBtn = document.getElementById('leaderboard-btn');
-    const profileBtn = document.getElementById('profile-btn');
-    
-    if (playAiBtn) playAiBtn.addEventListener('click', startAIGame);
-    if (playLocalBtn) playLocalBtn.addEventListener('click', startLocalGame);
-    if (playOnlineBtn) playOnlineBtn.addEventListener('click', findOnlineGame);
-    if (createRoomBtn) createRoomBtn.addEventListener('click', createPrivateRoom);
-    if (joinRoomBtn) joinRoomBtn.addEventListener('click', showJoinRoomModal);
-    if (friendsBtn) friendsBtn.addEventListener('click', () => socialManager.showFriendsModal());
+    const joinRoomBtn   = document.getElementById('join-room-btn');
+    const friendsBtn    = document.getElementById('friends-btn');
+    const leaderboardBtn= document.getElementById('leaderboard-btn');
+    const profileBtn    = document.getElementById('profile-btn');
+    if (playAiBtn)      playAiBtn.addEventListener('click', startAIGame);
+    if (playLocalBtn)   playLocalBtn.addEventListener('click', startLocalGame);
+    if (playOnlineBtn)  playOnlineBtn.addEventListener('click', findOnlineGame);
+    if (createRoomBtn)  createRoomBtn.addEventListener('click', createPrivateRoom);
+    if (joinRoomBtn)    joinRoomBtn.addEventListener('click', showJoinRoomModal);
+    if (friendsBtn)     friendsBtn.addEventListener('click', () => socialManager.showFriendsModal());
     if (leaderboardBtn) leaderboardBtn.addEventListener('click', () => socialManager.showLeaderboardModal());
-    if (profileBtn) profileBtn.addEventListener('click', showProfile);
-    
-    // Game event listeners
-    const newGameBtn = document.getElementById('new-game-btn');
-    const difficultySelect = document.getElementById('difficulty-select');
-    const resignBtn = document.getElementById('resign-btn');
-    const backToMenuBtn = document.getElementById('back-to-menu-btn');
-    const offerDrawBtn = document.getElementById('offer-draw-btn');
-    
-    if (newGameBtn) newGameBtn.addEventListener('click', startNewGame);
-    if (difficultySelect) difficultySelect.addEventListener('change', handleDifficultyChange);
-    if (resignBtn) resignBtn.addEventListener('click', handleResign);
-    if (backToMenuBtn) backToMenuBtn.addEventListener('click', backToMenu);
+    if (profileBtn)     profileBtn.addEventListener('click', showProfile);
+
+    // Game controls
+    const newGameBtn    = document.getElementById('new-game-btn');
+    const diffSelect    = document.getElementById('difficulty-select');
+    const resignBtn     = document.getElementById('resign-btn');
+    const backBtn       = document.getElementById('back-to-menu-btn');
+    const offerDrawBtn  = document.getElementById('offer-draw-btn');
+    const settingsBtn   = document.getElementById('settings-btn');
+    const analyzeBtn    = document.getElementById('analyze-btn');
+    const exportPgnBtn  = document.getElementById('export-pgn-btn');
+    if (newGameBtn)   newGameBtn.addEventListener('click', startNewGame);
+    if (diffSelect)   diffSelect.addEventListener('change', handleDifficultyChange);
+    if (resignBtn)    resignBtn.addEventListener('click', handleResign);
+    if (backBtn)      backBtn.addEventListener('click', backToMenu);
     if (offerDrawBtn) offerDrawBtn.addEventListener('click', offerDraw);
-    
-    // Draw offer modal listeners
-    const acceptDrawBtn = document.getElementById('accept-draw-btn');
+    if (settingsBtn)  settingsBtn.addEventListener('click', openSettings);
+    if (analyzeBtn)   analyzeBtn.addEventListener('click', analyzeGame);
+    if (exportPgnBtn) exportPgnBtn.addEventListener('click', exportPGN);
+
+    // Draw modal
+    const acceptDrawBtn  = document.getElementById('accept-draw-btn');
     const declineDrawBtn = document.getElementById('decline-draw-btn');
-    
-    if (acceptDrawBtn) acceptDrawBtn.addEventListener('click', acceptDraw);
+    if (acceptDrawBtn)  acceptDrawBtn.addEventListener('click', acceptDraw);
     if (declineDrawBtn) declineDrawBtn.addEventListener('click', declineDraw);
-    
-    // Room modal listeners
-    const roomModalConfirm = document.getElementById('room-modal-confirm');
-    const roomModalCancel = document.getElementById('room-modal-cancel');
-    
-    if (roomModalConfirm) roomModalConfirm.addEventListener('click', handleRoomModalConfirm);
-    if (roomModalCancel) roomModalCancel.addEventListener('click', hideRoomModal);
-    
-    // Enter key support for login
-    const usernameInput = document.getElementById('username');
-    const passwordInput = document.getElementById('password');
-    const roomCodeInput = document.getElementById('room-code-input');
-    
-    if (usernameInput) {
-        usernameInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleLogin();
-        });
-    }
-    
-    if (passwordInput) {
-        passwordInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleLogin();
-        });
-    }
-    
-    if (roomCodeInput) {
-        roomCodeInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleRoomModalConfirm();
-        });
-    }
-    
-    // Close modals when clicking outside
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('modal')) {
-            e.target.classList.add('hidden');
-        }
+
+    // Room modal
+    const roomConfirm = document.getElementById('room-modal-confirm');
+    const roomCancel  = document.getElementById('room-modal-cancel');
+    if (roomConfirm) roomConfirm.addEventListener('click', handleRoomModalConfirm);
+    if (roomCancel)  roomCancel.addEventListener('click', hideRoomModal);
+
+    // Settings modal
+    const closeSettings = document.getElementById('close-settings-btn');
+    if (closeSettings) closeSettings.addEventListener('click', () => {
+        document.getElementById('settings-modal').classList.add('hidden');
     });
-    
-    console.log('All event listeners set up');
+    const closeAnalysis = document.getElementById('close-analysis-btn');
+    if (closeAnalysis) closeAnalysis.addEventListener('click', () => {
+        document.getElementById('analysis-panel').classList.add('hidden');
+    });
+
+    // Theme buttons
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (themeManager) themeManager.setTheme(btn.dataset.theme);
+        });
+    });
+    const darkToggle = document.getElementById('dark-mode-toggle');
+    if (darkToggle) {
+        if (themeManager) darkToggle.checked = themeManager.darkMode;
+        darkToggle.addEventListener('change', () => {
+            if (themeManager) themeManager.toggleDarkMode();
+        });
+    }
+
+    // Sound settings
+    const soundToggle  = document.getElementById('sound-toggle');
+    const volumeSlider = document.getElementById('volume-slider');
+    if (soundToggle) soundToggle.addEventListener('change', () => {
+        if (chessGame && chessGame.sounds) chessGame.sounds.setEnabled(soundToggle.checked);
+    });
+    if (volumeSlider) volumeSlider.addEventListener('input', () => {
+        if (chessGame && chessGame.sounds) chessGame.sounds.setVolume(parseFloat(volumeSlider.value));
+    });
+
+    // Animation settings
+    const animToggle = document.getElementById('animations-toggle');
+    const animSpeed  = document.getElementById('animation-speed');
+    if (animToggle) animToggle.addEventListener('change', () => {
+        if (chessGame && chessGame.animations) chessGame.animations.setEnabled(animToggle.checked);
+    });
+    if (animSpeed) animSpeed.addEventListener('change', () => {
+        if (chessGame && chessGame.animations) chessGame.animations.setSpeed(animSpeed.value);
+    });
+
+    // Enter key on login
+    ['username','password'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+    });
+    const roomInput = document.getElementById('room-code-input');
+    if (roomInput) roomInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') handleRoomModalConfirm();
+    });
+
+    // Close modals on backdrop click
+    document.addEventListener('click', e => {
+        if (e.target.classList.contains('modal')) e.target.classList.add('hidden');
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+        if (document.getElementById('game-screen').classList.contains('hidden')) return;
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); startNewGame(); }
+        if (e.key === 'Escape' && chessGame) chessGame.clearSelection();
+    });
 }
 
 // Authentication Functions
@@ -481,20 +500,120 @@ function backToMenu() {
     showMainMenu();
 }
 
+function openSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    // Sync current values
+    if (chessGame) {
+        const s = chessGame.sounds;
+        const a = chessGame.animations;
+        const soundToggle = document.getElementById('sound-toggle');
+        const volSlider   = document.getElementById('volume-slider');
+        const animToggle  = document.getElementById('animations-toggle');
+        const animSpeed   = document.getElementById('animation-speed');
+        if (s && soundToggle) soundToggle.checked = s.enabled;
+        if (s && volSlider)   volSlider.value     = s.volume;
+        if (a && animToggle)  animToggle.checked  = a.enabled;
+        if (a && animSpeed)   animSpeed.value     = a.speed;
+    }
+    modal.classList.remove('hidden');
+}
+
+function analyzeGame() {
+    if (!chessGame) return;
+    const history = chessGame.engine.moveHistory;
+    if (!history || history.length === 0) {
+        showNotification('No moves to analyse yet.', 'info');
+        return;
+    }
+
+    const panel = document.getElementById('analysis-panel');
+    const content = document.getElementById('analysis-content');
+    if (!panel || !content) return;
+
+    // Run analysis
+    let result;
+    try {
+        const analyser = new AnalysisEngine();
+        result = analyser.analyzeGame(history, chessGame.engine);
+    } catch(e) {
+        showNotification('Analysis failed: ' + e.message, 'error');
+        return;
+    }
+
+    const { classifications, summary } = result;
+    const labels = { best: '✓ Best', good: '✓ Good', inaccuracy: '? Inaccuracy', mistake: '?! Mistake', blunder: '?? Blunder' };
+    const colors = { best: '#4caf50', good: '#8bc34a', inaccuracy: '#ff9800', mistake: '#ff5722', blunder: '#f44336' };
+
+    let html = `
+        <div class="analysis-summary">
+            <table>
+                <tr><th></th><th>White</th><th>Black</th></tr>
+                ${['blunder','mistake','inaccuracy','good','best'].map(t => `
+                <tr>
+                    <td style="color:${colors[t]}">${labels[t]}</td>
+                    <td>${summary.white[t] || 0}</td>
+                    <td>${summary.black[t] || 0}</td>
+                </tr>`).join('')}
+            </table>
+        </div>
+        <div class="analysis-moves">
+            ${classifications.map((c, i) => {
+                const moveNum = Math.floor(i / 2) + 1;
+                const isWhite = c.color === 'white';
+                const prefix  = isWhite ? `${moveNum}.` : `${moveNum}…`;
+                const m = history[c.moveIndex];
+                const notation = m ? formatMoveSimple(m) : '?';
+                return `<span class="analysis-move" style="color:${colors[c.type]}" title="${labels[c.type]}">${prefix}${notation}</span>`;
+            }).join(' ')}
+        </div>`;
+
+    content.innerHTML = html;
+    panel.classList.remove('hidden');
+}
+
+function formatMoveSimple(m) {
+    if (!m || !m.to) return '?';
+    const files = 'abcdefgh';
+    const ranks = '87654321';
+    if (m.type === 'castle-kingside')  return 'O-O';
+    if (m.type === 'castle-queenside') return 'O-O-O';
+    const piece = m.piece && m.piece.toUpperCase() !== 'P' ? m.piece.toUpperCase() : '';
+    const cap   = m.capturedPiece ? 'x' : '';
+    return `${piece}${cap}${files[m.to.col]}${ranks[m.to.row]}`;
+}
+
+function exportPGN() {
+    if (!chessGame) return;
+    const history = chessGame.engine.moveHistory;
+    if (!history || history.length === 0) {
+        showNotification('No moves to export.', 'info');
+        return;
+    }
+    let pgn = '[Event "Chess game"]\n[Date "' + new Date().toISOString().slice(0,10) + '"]\n\n';
+    for (let i = 0; i < history.length; i++) {
+        if (i % 2 === 0) pgn += `${Math.floor(i/2)+1}. `;
+        pgn += formatMoveSimple(history[i]) + ' ';
+    }
+    pgn = pgn.trim();
+    navigator.clipboard.writeText(pgn)
+        .then(() => showNotification('PGN copied to clipboard!', 'success'))
+        .catch(() => {
+            // Fallback: show in alert
+            prompt('Copy this PGN:', pgn);
+        });
+}
+
 function showProfile() {
     const user = authSystem.getCurrentUser();
     if (!user) return;
     
     const stats = authSystem.getUserStats();
-    const message = `
-Profile: ${stats.username}
+    const message = `Profile: ${stats.username}
 ELO: ${stats.elo}
-Games Played: ${stats.gamesPlayed}
-Wins: ${stats.wins}
-Losses: ${stats.losses}
-Draws: ${stats.draws}
-Win Rate: ${stats.winRate}%
-    `.trim();
+Games played: ${stats.gamesPlayed}
+Wins: ${stats.wins} | Losses: ${stats.losses} | Draws: ${stats.draws}
+Win rate: ${stats.winRate}%`.trim();
     
     alert(message);
 }
@@ -554,55 +673,5 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Make functions globally accessible
+// Make showNotification globally accessible
 window.showNotification = showNotification;
-
-// Keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    // Only handle shortcuts when game is active
-    if (document.getElementById('game-screen').classList.contains('hidden')) {
-        return;
-    }
-    
-    switch (e.key) {
-        case 'n':
-        case 'N':
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                startNewGame();
-                showNotification('New game started!', 'success');
-            }
-            break;
-        case 'Escape':
-            if (chessGame) {
-                chessGame.clearSelection();
-            }
-            break;
-    }
-});
-
-// Prevent context menu on chess board
-document.addEventListener('contextmenu', function(e) {
-    if (e.target.classList.contains('square')) {
-        e.preventDefault();
-    }
-});
-
-// Add visual feedback for buttons
-document.addEventListener('click', function(e) {
-    if (e.target.tagName === 'BUTTON') {
-        e.target.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            e.target.style.transform = 'scale(1)';
-        }, 100);
-    }
-});
-
-// Game state warning on page unload
-window.addEventListener('beforeunload', function(e) {
-    if (chessGame && chessGame.engine.moveHistory.length > 0 && chessGame.engine.gameState === 'playing') {
-        e.preventDefault();
-        e.returnValue = 'You have a game in progress. Are you sure you want to leave?';
-        return e.returnValue;
-    }
-});

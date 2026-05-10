@@ -5,16 +5,21 @@ class ChessGame {
         this.selectedSquare = null;
         this.validMoves = [];
         this.isPlayerTurn = true;
-        this.gameMode = 'ai'; // 'ai', 'multiplayer', or 'local'
+        this.gameMode = 'ai';
         this.playerColor = 'white';
-        this.pendingPromotion = null; // Store promotion move until piece is selected
-        this.boardFlipped = false; // For local 2-player mode
-        
+        this.pendingPromotion = null;
+        this.boardFlipped = false;
+
+        // Optional enhancements (loaded from enhancements.js)
+        this.sounds     = typeof SoundManager     !== 'undefined' ? new SoundManager()     : null;
+        this.animations = typeof AnimationManager !== 'undefined' ? new AnimationManager() : null;
+        this.timeCtrl   = null; // set when a timed game starts
+
         this.pieceSymbols = {
             'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
             'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
         };
-        
+
         this.initializeBoard();
         this.updateDisplay();
         this.setupPromotionModal();
@@ -342,27 +347,44 @@ class ChessGame {
     }
 
     executeMove(fromRow, fromCol, toRow, toCol, promotionPiece = null) {
+        const piece = this.engine.getPieceAt(fromRow, fromCol);
+        const captured = this.engine.getPieceAt(toRow, toCol);
+        const isCastle = piece && piece.toLowerCase() === 'k' && Math.abs(toCol - fromCol) === 2;
+        const isEnPassant = piece && piece.toLowerCase() === 'p' && toCol !== fromCol && !captured;
+
         if (this.engine.makeMove(fromRow, fromCol, toRow, toCol, promotionPiece)) {
+            // Sounds
+            if (this.sounds) {
+                if (isCastle)                                   this.sounds.play('castle');
+                else if (captured || isEnPassant)               this.sounds.play('capture');
+                else                                            this.sounds.play('move');
+                if (this.engine.isInCheck(this.engine.currentPlayer)) this.sounds.play('check');
+            }
+
+            // Last-move highlight
+            if (this.animations) {
+                const fromSq = document.querySelector(`[data-row="${fromRow}"][data-col="${fromCol}"]`);
+                const toSq   = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"]`);
+                this.animations.highlightLastMove(fromSq, toSq);
+            }
+
             this.clearSelection();
             this.updateDisplay();
-            
-            // Handle local 2-player mode - flip board after each move
+
+            // Local 2-player: flip board
             if (this.gameMode === 'local') {
                 this.boardFlipped = !this.boardFlipped;
-                setTimeout(() => {
-                    this.initializeBoard();
-                    this.updateDisplay();
-                }, 300); // Small delay for smooth transition
+                setTimeout(() => { this.initializeBoard(); this.updateDisplay(); }, 300);
             }
-            
-            // Handle multiplayer move
+
+            // Multiplayer: send move
             if (this.gameMode === 'multiplayer' && window.multiplayerManager) {
                 window.multiplayerManager.makeMove(fromRow, fromCol, toRow, toCol, promotionPiece);
                 this.isPlayerTurn = false;
             }
-            
-            // Handle AI move - only trigger when it's the AI's turn (not the player's color)
-            if (this.gameMode === 'ai' && 
+
+            // AI: only trigger if it's now the AI's turn
+            if (this.gameMode === 'ai' &&
                 this.engine.gameState === 'playing' &&
                 this.engine.currentPlayer !== this.playerColor) {
                 this.isPlayerTurn = false;
@@ -513,31 +535,16 @@ class ChessGame {
     }
 
     handleGameEnd(result) {
-        // Update ELO rating
+        if (this.sounds) this.sounds.play('end');
+        if (this.timeCtrl) this.timeCtrl.stop();
+
+        // Sync ELO with server
         if (window.authSystem && window.authSystem.getCurrentUser()) {
-            let opponentElo = 1200; // Default AI ELO
-            
-            // Get opponent ELO for multiplayer games
-            if (this.gameMode === 'multiplayer' && this.opponentInfo) {
-                opponentElo = this.opponentInfo.elo;
-            }
-            
-            // Update ELO if method exists
+            const opponentElo = (this.gameMode === 'multiplayer' && this.opponentInfo)
+                ? this.opponentInfo.elo : 1200;
+            // updateElo is optional – only call if it exists
             if (typeof window.authSystem.updateElo === 'function') {
                 window.authSystem.updateElo(result, opponentElo);
-            }
-            
-            // Update player info display
-            const stats = window.authSystem.getUserStats();
-            if (stats) {
-                // Update ELO display in multiplayer
-                if (this.gameMode === 'multiplayer') {
-                    if (this.playerColor === 'white') {
-                        document.getElementById('white-player-elo').textContent = `ELO: ${stats.elo}`;
-                    } else {
-                        document.getElementById('black-player-elo').textContent = `ELO: ${stats.elo}`;
-                    }
-                }
             }
         }
     }

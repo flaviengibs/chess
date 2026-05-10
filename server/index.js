@@ -10,38 +10,21 @@ const EloCalculator = require('./elo-calculator');
 const ChessEngine = require('./chess-engine');
 const FriendsManager = require('./friends-manager');
 const UserManager = require('./user-manager');
+const ServerTournamentManager = require('./tournament-manager');
 
 // Configuration
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
-
-// All allowed origins
-const ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'https://flaviengibs.github.io',
-    'https://flaviengibs.github.io/chess',
-    'https://chess.gibbons.fr',
-    CLIENT_URL
-].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
 
 // Configure CORS
-const corsOptions = {
-    origin: function(origin, callback) {
-        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-            return callback(null, true);
-        }
-        console.warn(`CORS blocked: ${origin}`);
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true
-};
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: CLIENT_URL,
+  credentials: true
+}));
 
 // Parse JSON bodies
 app.use(express.json());
@@ -51,16 +34,11 @@ app.use(express.static(path.join(__dirname, '..')));
 
 // Initialize Socket.IO with CORS configuration
 const io = new Server(server, {
-    cors: {
-        origin: function(origin, callback) {
-            if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-                return callback(null, true);
-            }
-            return callback(new Error('Not allowed by CORS'));
-        },
-        methods: ['GET', 'POST'],
-        credentials: true
-    }
+  cors: {
+    origin: CLIENT_URL,
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
 });
 
 // Initialize managers
@@ -70,6 +48,7 @@ const chessValidator = new ChessValidator();
 const eloCalculator = new EloCalculator();
 const friendsManager = new FriendsManager();
 const userManager = new UserManager();
+const tournamentManager = new ServerTournamentManager();
 
 /**
  * REST API Endpoints for Authentication
@@ -223,6 +202,45 @@ function handleGameEnd(room, reason, winner) {
   userManager.updateUserStats(room.whitePlayer.username, whiteResultStr, room.whitePlayer.elo);
   userManager.updateUserStats(room.blackPlayer.username, blackResultStr, room.blackPlayer.elo);
   
+  // Check if this is a tournament game
+  let tournamentResult = null;
+  if (room.tournamentGameId) {
+    const gameResult = whiteResult === 1.0 ? '1-0' : whiteResult === 0.0 ? '0-1' : '1/2-1/2';
+    tournamentResult = tournamentManager.recordGameResult(
+      room.tournamentId,
+      room.tournamentGameId,
+      gameResult
+    );
+    
+    if (tournamentResult.success) {
+      console.log(`[${new Date().toISOString()}] Tournament game result recorded: ${room.tournamentGameId}`);
+      
+      // Notify all clients about tournament update
+      io.emit('tournament-updated', {
+        tournamentId: room.tournamentId,
+        tournament: tournamentResult.tournament
+      });
+      
+      // If round is complete, notify players
+      if (tournamentResult.roundComplete) {
+        io.emit('tournament-round-complete', {
+          tournamentId: room.tournamentId,
+          round: tournamentResult.tournament.currentRound,
+          standings: tournamentResult.tournament.standings
+        });
+      }
+      
+      // If tournament is complete, notify players
+      if (tournamentResult.tournamentComplete) {
+        io.emit('tournament-complete', {
+          tournamentId: room.tournamentId,
+          winner: tournamentResult.winner,
+          standings: tournamentResult.tournament.standings
+        });
+      }
+    }
+  }
+  
   // Emit game-ended event to both players
   const gameEndData = {
     reason,
@@ -234,7 +252,8 @@ function handleGameEnd(room, reason, winner) {
     newElos: {
       white: room.whitePlayer.elo,
       black: room.blackPlayer.elo
-    }
+    },
+    tournamentResult: tournamentResult
   };
   
   if (room.whitePlayer.socket) {
@@ -537,6 +556,329 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Tournament Management Events
+  socket.on('tournament-create', (data) => {
+    try {
+      const { config, creatorUsername, creatorElo } = data;
+      console.log(`[${new Date().toISOString()}] Creating tournament: ${config.name} by ${creatorUsername}`);
+      
+      const result = tournamentManager.createTournament(
+        { ...config, creatorElo },
+        creatorUsername
+      );
+      
+      socket.emit('tournament-created', result);
+      
+      if (result.success) {
+        // Broadcast to all clients that a new tournament is available
+        io.emit('tournament-list-updated', {
+          tournaments: tournamentManager.getAllTournaments()
+        });
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error creating tournament:`, error);
+      socket.emit('tournament-created', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-join', (data) => {
+    try {
+      const { tournamentId, playerInfo } = data;
+      console.log(`[${new Date().toISOString()}] Player ${playerInfo.username} joining tournament ${tournamentId}`);
+      
+      const result = tournamentManager.joinTournament(tournamentId, playerInfo);
+      
+      socket.emit('tournament-joined', result);
+      
+      if (result.success) {
+        // Notify all players in the tournament
+        const tournament = tournamentManager.getTournament(tournamentId);
+        if (tournament) {
+          io.emit('tournament-updated', {
+            tournamentId,
+            tournament: tournament.getTournamentState()
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error joining tournament:`, error);
+      socket.emit('tournament-joined', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-leave', (data) => {
+    try {
+      const { tournamentId, username } = data;
+      console.log(`[${new Date().toISOString()}] Player ${username} leaving tournament ${tournamentId}`);
+      
+      const result = tournamentManager.leaveTournament(tournamentId, username);
+      
+      socket.emit('tournament-left', result);
+      
+      if (result.success) {
+        // Notify all players in the tournament
+        io.emit('tournament-updated', {
+          tournamentId,
+          tournament: result.tournament
+        });
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error leaving tournament:`, error);
+      socket.emit('tournament-left', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-start', (data) => {
+    try {
+      const { tournamentId } = data;
+      console.log(`[${new Date().toISOString()}] Starting tournament ${tournamentId}`);
+      
+      const result = tournamentManager.startTournament(tournamentId);
+      
+      socket.emit('tournament-started', result);
+      
+      if (result.success) {
+        // Notify all players in the tournament
+        io.emit('tournament-updated', {
+          tournamentId,
+          tournament: result.tournament
+        });
+        
+        // Notify players about their pairings
+        const tournament = tournamentManager.getTournament(tournamentId);
+        if (tournament) {
+          const pairings = tournament.getCurrentRoundPairings();
+          io.emit('tournament-round-started', {
+            tournamentId,
+            round: tournament.currentRound,
+            pairings
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error starting tournament:`, error);
+      socket.emit('tournament-started', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-get-state', (data) => {
+    try {
+      const { tournamentId } = data;
+      const state = tournamentManager.getTournamentState(tournamentId);
+      
+      if (state) {
+        socket.emit('tournament-state', { success: true, tournament: state });
+      } else {
+        socket.emit('tournament-state', { success: false, error: 'Tournament not found' });
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error getting tournament state:`, error);
+      socket.emit('tournament-state', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-get-all', () => {
+    try {
+      const tournaments = tournamentManager.getAllTournaments();
+      socket.emit('tournament-list', { success: true, tournaments });
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error getting tournaments:`, error);
+      socket.emit('tournament-list', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-get-player-tournaments', (data) => {
+    try {
+      const { username } = data;
+      const tournaments = tournamentManager.getPlayerTournaments(username);
+      socket.emit('player-tournaments', { success: true, tournaments });
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error getting player tournaments:`, error);
+      socket.emit('player-tournaments', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-advance-round', (data) => {
+    try {
+      const { tournamentId } = data;
+      console.log(`[${new Date().toISOString()}] Advancing round in tournament ${tournamentId}`);
+      
+      const result = tournamentManager.advanceRound(tournamentId);
+      
+      socket.emit('tournament-round-advanced', result);
+      
+      if (result.success) {
+        // Notify all players in the tournament
+        io.emit('tournament-updated', {
+          tournamentId,
+          tournament: result.tournament
+        });
+        
+        // Notify players about new round pairings
+        io.emit('tournament-round-started', {
+          tournamentId,
+          round: result.tournament.currentRound,
+          pairings: result.pairings
+        });
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error advancing round:`, error);
+      socket.emit('tournament-round-advanced', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-game-start', (data) => {
+    try {
+      const { tournamentId, gameId, roomCode } = data;
+      console.log(`[${new Date().toISOString()}] Tournament game starting: ${gameId} in room ${roomCode}`);
+      
+      tournamentManager.associateGame(gameId, tournamentId, roomCode);
+      
+      socket.emit('tournament-game-started', { success: true, gameId, roomCode });
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error starting tournament game:`, error);
+      socket.emit('tournament-game-started', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-game-result', (data) => {
+    try {
+      const { tournamentId, gameId, result } = data;
+      console.log(`[${new Date().toISOString()}] Recording tournament game result: ${gameId} = ${result}`);
+      
+      const recordResult = tournamentManager.recordGameResult(tournamentId, gameId, result);
+      
+      socket.emit('tournament-game-result-recorded', recordResult);
+      
+      if (recordResult.success) {
+        // Notify all players in the tournament
+        io.emit('tournament-updated', {
+          tournamentId,
+          tournament: recordResult.tournament
+        });
+        
+        // If round is complete, notify players
+        if (recordResult.roundComplete) {
+          io.emit('tournament-round-complete', {
+            tournamentId,
+            round: recordResult.tournament.currentRound,
+            standings: recordResult.tournament.standings
+          });
+        }
+        
+        // If tournament is complete, notify players
+        if (recordResult.tournamentComplete) {
+          io.emit('tournament-complete', {
+            tournamentId,
+            winner: recordResult.winner,
+            standings: recordResult.tournament.standings
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error recording game result:`, error);
+      socket.emit('tournament-game-result-recorded', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-create-game', (data) => {
+    try {
+      const { tournamentId, gameId, whitePlayer, blackPlayer } = data;
+      console.log(`[${new Date().toISOString()}] Creating tournament game: ${gameId}`);
+      
+      // Create a room for the tournament game
+      const roomCode = roomManager.createRoom(whitePlayer.id, whitePlayer);
+      const room = roomManager.getRoom(roomCode);
+      
+      // Set up the room for tournament play
+      room.tournamentId = tournamentId;
+      room.tournamentGameId = gameId;
+      room.whitePlayer.socket = socket;
+      
+      // Associate socket with player
+      connectionManager.associateSocketWithPlayer(socket, whitePlayer.id);
+      
+      // Join socket.io room
+      socket.join(roomCode);
+      
+      // Associate game with tournament
+      tournamentManager.associateGame(gameId, tournamentId, roomCode);
+      
+      socket.emit('tournament-game-created', {
+        success: true,
+        roomCode,
+        gameId,
+        tournamentId
+      });
+      
+      console.log(`[${new Date().toISOString()}] Tournament game room ${roomCode} created for game ${gameId}`);
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error creating tournament game:`, error);
+      socket.emit('tournament-game-created', { success: false, error: error.message });
+    }
+  });
+
+  socket.on('tournament-join-game', (data) => {
+    try {
+      const { roomCode, tournamentId, gameId, playerInfo } = data;
+      const playerId = data.playerId || socket.id;
+      
+      console.log(`[${new Date().toISOString()}] Player ${playerId} joining tournament game ${gameId}`);
+      
+      const result = roomManager.joinRoom(roomCode, playerId, playerInfo);
+      
+      if (!result.success) {
+        socket.emit('error', { message: result.error });
+        return;
+      }
+      
+      const room = result.room;
+      room.blackPlayer.socket = socket;
+      room.tournamentId = tournamentId;
+      room.tournamentGameId = gameId;
+      
+      // Associate socket with player
+      connectionManager.associateSocketWithPlayer(socket, playerId);
+      
+      // Join socket.io room
+      socket.join(roomCode);
+      
+      // Initialize game state
+      room.gameState = initializeGameState();
+      
+      // Notify both players that game has started
+      const gameStartData = {
+        roomCode,
+        tournamentId,
+        gameId,
+        whitePlayer: {
+          username: room.whitePlayer.username,
+          elo: room.whitePlayer.elo
+        },
+        blackPlayer: {
+          username: room.blackPlayer.username,
+          elo: room.blackPlayer.elo
+        },
+        gameState: room.gameState
+      };
+      
+      room.whitePlayer.socket.emit('tournament-game-started', {
+        ...gameStartData,
+        playerColor: 'white'
+      });
+      
+      room.blackPlayer.socket.emit('tournament-game-started', {
+        ...gameStartData,
+        playerColor: 'black'
+      });
+      
+      console.log(`[${new Date().toISOString()}] Tournament game started in room ${roomCode}`);
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error joining tournament game:`, error);
+      socket.emit('error', { message: 'Failed to join tournament game' });
+    }
+  });
+
   // Handle disconnection
   socket.on('disconnect', (reason) => {
     console.log(`[${new Date().toISOString()}] Client disconnected: ${socket.id}, reason: ${reason}`);
@@ -546,6 +888,29 @@ io.on('connection', (socket) => {
       const room = roomManager.getRoom(roomCode);
       if (room) {
         const winner = playerColor === 'white' ? 'black' : 'white';
+        
+        // Check if this is a tournament game
+        if (room.tournamentGameId) {
+          const disconnectedUsername = playerColor === 'white' 
+            ? room.whitePlayer.username 
+            : room.blackPlayer.username;
+          
+          const disconnectResult = tournamentManager.handlePlayerDisconnection(
+            disconnectedUsername,
+            room.tournamentGameId
+          );
+          
+          if (disconnectResult.isTournamentGame && disconnectResult.handled) {
+            console.log(`[${new Date().toISOString()}] Tournament game ${room.tournamentGameId} ended due to disconnection`);
+            
+            // Notify all clients about tournament update
+            io.emit('tournament-updated', {
+              tournamentId: room.tournamentId,
+              tournament: disconnectResult.tournament
+            });
+          }
+        }
+        
         handleGameEnd(room, 'timeout', winner);
       }
     });

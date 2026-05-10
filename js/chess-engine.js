@@ -38,6 +38,51 @@ class ChessEngine {
         return this.board[row][col];
     }
 
+    // Load a position from a FEN string
+    loadFEN(fen) {
+        const parts = fen.trim().split(' ');
+        const rows  = parts[0].split('/');
+
+        // Board
+        this.board = [];
+        for (let r = 0; r < 8; r++) {
+            const row = [];
+            for (const ch of rows[r]) {
+                if (/\d/.test(ch)) {
+                    for (let i = 0; i < parseInt(ch); i++) row.push(null);
+                } else {
+                    row.push(ch);
+                }
+            }
+            this.board.push(row);
+        }
+
+        // Active color
+        this.currentPlayer = (parts[1] === 'b') ? 'black' : 'white';
+
+        // Castling rights
+        const cast = parts[2] || '-';
+        this.castlingRights = {
+            white: { kingside: cast.includes('K'), queenside: cast.includes('Q') },
+            black: { kingside: cast.includes('k'), queenside: cast.includes('q') },
+        };
+
+        // En passant
+        if (parts[3] && parts[3] !== '-') {
+            const file = parts[3].charCodeAt(0) - 97;
+            const rank = 8 - parseInt(parts[3][1]);
+            this.enPassantTarget = { row: rank, col: file };
+        } else {
+            this.enPassantTarget = null;
+        }
+
+        this.halfMoveClock  = parseInt(parts[4] || '0');
+        this.fullMoveNumber = parseInt(parts[5] || '1');
+        this.moveHistory    = [];
+        this.capturedPieces = { white: [], black: [] };
+        this.gameState      = 'playing';
+    }
+
     isValidSquare(row, col) {
         return row >= 0 && row <= 7 && col >= 0 && col <= 7;
     }
