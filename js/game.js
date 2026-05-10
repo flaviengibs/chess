@@ -44,19 +44,66 @@ class ChessGame {
         this.playerColor = 'white';
         this.isPlayerTurn = true;
         this.boardFlipped = false;
-        
         this.newGame();
         this.updateDisplay();
+        this._startTimeControl();
     }
 
     startLocalGame() {
         this.gameMode = 'local';
-        this.playerColor = 'white'; // Not really used in local mode
+        this.playerColor = 'white';
         this.isPlayerTurn = true;
         this.boardFlipped = false;
-        
         this.newGame();
         this.updateDisplay();
+        this._startTimeControl();
+    }
+
+    // Read the time-control selector and start timers if a limit is chosen
+    _startTimeControl() {
+        const sel = document.getElementById('time-control-select');
+        if (!sel || sel.value === 'none') {
+            this.timeCtrl = null;
+            document.getElementById('white-timer').textContent = '';
+            document.getElementById('black-timer').textContent = '';
+            return;
+        }
+
+        const minutes = parseInt(sel.value);
+        if (isNaN(minutes) || minutes <= 0) return;
+
+        this.timeCtrl = new TimeControlManager(minutes);
+
+        // Tick: update the two timer elements
+        this.timeCtrl.onTick = (times) => {
+            const wEl = document.getElementById('white-timer');
+            const bEl = document.getElementById('black-timer');
+            if (wEl) {
+                wEl.textContent = this.timeCtrl.format(times.white);
+                wEl.classList.toggle('low-time', times.white < 30000);
+            }
+            if (bEl) {
+                bEl.textContent = this.timeCtrl.format(times.black);
+                bEl.classList.toggle('low-time', times.black < 30000);
+            }
+        };
+
+        // Timeout: the player who ran out loses
+        this.timeCtrl.onTimeout = (color) => {
+            this.engine.gameState = 'timeout';
+            const gameStatusEl = document.getElementById('game-status');
+            const winner = color === 'white' ? 'Black' : 'White';
+            if (gameStatusEl) {
+                gameStatusEl.textContent = `${winner} wins on time!`;
+                gameStatusEl.className = 'game-won';
+            }
+            const currentPlayerEl = document.getElementById('current-player');
+            if (currentPlayerEl) currentPlayerEl.textContent = 'Game over';
+            this.handleGameEnd(color === this.playerColor ? 'loss' : 'win');
+        };
+
+        // Start the clock for white (white always moves first)
+        this.timeCtrl.start('white');
     }
 
     initializeBoard() {
@@ -370,6 +417,11 @@ class ChessGame {
 
             this.clearSelection();
             this.updateDisplay();
+
+            // Switch clock to the next player
+            if (this.timeCtrl && this.engine.gameState === 'playing') {
+                this.timeCtrl.switch(this.engine.currentPlayer);
+            }
 
             // Local 2-player: flip board
             if (this.gameMode === 'local') {

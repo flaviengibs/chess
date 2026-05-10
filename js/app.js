@@ -519,7 +519,7 @@ function openSettings() {
     modal.classList.remove('hidden');
 }
 
-function analyzeGame() {
+async function analyzeGame() {
     if (!chessGame) return;
     const history = chessGame.engine.moveHistory;
     if (!history || history.length === 0) {
@@ -527,49 +527,60 @@ function analyzeGame() {
         return;
     }
 
-    const panel = document.getElementById('analysis-panel');
+    const panel   = document.getElementById('analysis-panel');
     const content = document.getElementById('analysis-content');
     if (!panel || !content) return;
 
-    // Run analysis
-    let result;
-    try {
-        const analyser = new AnalysisEngine();
-        result = analyser.analyzeGame(history, chessGame.engine);
-    } catch(e) {
-        showNotification('Analysis failed: ' + e.message, 'error');
-        return;
-    }
+    // Show loading state
+    panel.classList.remove('hidden');
+    content.innerHTML = '<p style="text-align:center;padding:20px;">⏳ Analysing with Stockfish…<br><small id="analysis-progress"></small></p>';
 
-    const { classifications, summary } = result;
+    const analyzeBtn = document.getElementById('analyze-btn');
+    if (analyzeBtn) { analyzeBtn.disabled = true; analyzeBtn.textContent = 'Analysing…'; }
+
+    try {
+        const result = await runStockfishAnalysis(history, (done, total) => {
+            const el = document.getElementById('analysis-progress');
+            if (el) el.textContent = `Move ${done} / ${total}`;
+        });
+
+        renderAnalysis(result, history, content);
+    } catch (e) {
+        content.innerHTML = `<p style="color:#f44336;padding:10px;">Analysis failed: ${e.message}</p>`;
+        showNotification('Stockfish analysis failed – check your connection.', 'error');
+    } finally {
+        if (analyzeBtn) { analyzeBtn.disabled = false; analyzeBtn.textContent = 'Analyse game'; }
+    }
+}
+
+function renderAnalysis({ classifications, summary }, history, content) {
     const labels = { best: '✓ Best', good: '✓ Good', inaccuracy: '? Inaccuracy', mistake: '?! Mistake', blunder: '?? Blunder' };
     const colors = { best: '#4caf50', good: '#8bc34a', inaccuracy: '#ff9800', mistake: '#ff5722', blunder: '#f44336' };
 
-    let html = `
+    const tableRows = ['blunder','mistake','inaccuracy','good','best'].map(t => `
+        <tr>
+            <td style="color:${colors[t]}">${labels[t]}</td>
+            <td>${summary.white[t] || 0}</td>
+            <td>${summary.black[t] || 0}</td>
+        </tr>`).join('');
+
+    const movesHtml = classifications.map((c, i) => {
+        const moveNum = Math.floor(i / 2) + 1;
+        const prefix  = c.color === 'white' ? `${moveNum}.` : `${moveNum}…`;
+        const m       = history[c.moveIndex];
+        const notation = m ? formatMoveSimple(m) : '?';
+        const evalStr  = c.evalAfter > 90000 ? 'M' : c.evalAfter < -90000 ? '-M' : (c.evalAfter / 100).toFixed(1);
+        return `<span class="analysis-move" style="color:${colors[c.type]}" title="${labels[c.type]} (${evalStr})">${prefix}${notation}</span>`;
+    }).join(' ');
+
+    content.innerHTML = `
         <div class="analysis-summary">
             <table>
                 <tr><th></th><th>White</th><th>Black</th></tr>
-                ${['blunder','mistake','inaccuracy','good','best'].map(t => `
-                <tr>
-                    <td style="color:${colors[t]}">${labels[t]}</td>
-                    <td>${summary.white[t] || 0}</td>
-                    <td>${summary.black[t] || 0}</td>
-                </tr>`).join('')}
+                ${tableRows}
             </table>
         </div>
-        <div class="analysis-moves">
-            ${classifications.map((c, i) => {
-                const moveNum = Math.floor(i / 2) + 1;
-                const isWhite = c.color === 'white';
-                const prefix  = isWhite ? `${moveNum}.` : `${moveNum}…`;
-                const m = history[c.moveIndex];
-                const notation = m ? formatMoveSimple(m) : '?';
-                return `<span class="analysis-move" style="color:${colors[c.type]}" title="${labels[c.type]}">${prefix}${notation}</span>`;
-            }).join(' ')}
-        </div>`;
-
-    content.innerHTML = html;
-    panel.classList.remove('hidden');
+        <div class="analysis-moves" style="margin-top:10px;line-height:2">${movesHtml}</div>`;
 }
 
 function formatMoveSimple(m) {

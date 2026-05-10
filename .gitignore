@@ -43,6 +43,9 @@ debug.js
 # Puzzle source data (large CSV, not needed in repo)
 lichess_puzzles/
 extract_puzzles.js
+
+# Stockfish C++ source (we use the CDN build instead)
+Stockfish/
 IMPLEMENTATION_COMPLETE.md
 FINAL_STATUS.md
 ENHANCEMENT_STATUS.md
