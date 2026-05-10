@@ -2,7 +2,7 @@
 
 ## play online now (no setup required)
 
-just go to: **https://chess-o3ub.onrender.com**
+just go to: **https://chess.gibbons.fr**
 
 1. create an account (username + password, minimum 6 characters)
 2. login with your credentials
@@ -132,7 +132,7 @@ open your browser and go to: `http://localhost:3000`
 
 ## server status
 
-the online server at `https://chess-o3ub.onrender.com` is hosted on Render's free tier:
+the online server at `https://chess.gibbons.fr` is hosted on Render's free tier:
 - **first connection:** may take 30-60 seconds (server waking up)
 - **after that:** instant response
 - **sleeps after:** 15 minutes of inactivity

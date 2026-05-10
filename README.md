@@ -3,7 +3,7 @@
 a full-featured online chess game with real-time multiplayer, AI opponent, and secure authentication.
 
 ## how to play online
-go on https://chess-o3ub.onrender.com/
+go on https://chess.gibbons.fr
 - create an account with username + password 
 - click register
 - enter the same username and password combination
