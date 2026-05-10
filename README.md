@@ -1,183 +1,140 @@
-# chess game
+# Chess game
 
-a full-featured online chess game with real-time multiplayer, AI opponent, and secure authentication.
+A full-featured online chess game with real-time multiplayer, AI opponent, puzzles, themes, sounds, and more.
 
-## how to play online
-go on https://chess.gibbons.fr
-- create an account with username + password 
-- click register
-- enter the same username and password combination
-- click login
-- then click play online (this will wait for an opponent, but as no one sees my projects, no one will probably ever play so...)
-- OR click create private room and share the code with someone you want to play with
-
-## what's this?
-
-this is a complete chess game you can play in your browser. play against the computer, challenge your friends online, or find random opponents through matchmaking. everything runs in real-time with WebSockets, and your account data is securely stored on the server.
-
-## features
-
-### game modes
-- **play vs AI** - three difficulty levels (easy, medium, hard)
-- **online multiplayer** - real-time games with other players
-- **private rooms** - create a room and share the code with friends
-- **matchmaking** - find random opponents automatically
-
-### chess stuff
-- full chess rules (castling, en passant, pawn promotion, etc.)
-- move validation and legal move highlighting
-- check and checkmate detection
-- draw offers and resignation
-- in-game chat
-
-### account system
-- secure authentication with bcrypt password hashing
-- ELO rating system (starts at 1200)
-- win/loss/draw statistics
-- cross-device login (play from any browser)
-- persistent data storage
-
-### social features
-- friend system (send/accept requests, to see new friends and friend requests, refresh the friends menu popup by closing it and reopening it)
-- global leaderboard (top 50 players)
-- player profiles with stats
-- invite friends to private games
-
-## how to run locally
-
-### prerequisites
-- Node.js 14+ installed
-- a modern web browser
-
-### setup
-
-1. clone this repo:
-```bash
-git clone https://github.com/yourusername/chess-game.git
-cd chess-game
-```
-
-2. install server dependencies:
-```bash
-cd server
-npm install
-```
-
-3. start the server:
-```bash
-npm start
-```
-
-4. open your browser and go to:
-```
-http://localhost:3000
-```
-
-5. create an account and start playing!
-
-## how to deploy
-
-check out `DEPLOYMENT_GUIDE.md` for detailed instructions on deploying to:
-- GitHub Pages (frontend)
-- Render.com (backend server)
-
-both are free and take about 5 minutes to set up.
-
-## tech stack
-
-**frontend:**
-- vanilla JavaScript (no frameworks)
-- HTML5 canvas for the board
-- CSS3 for styling
-- Socket.IO client for real-time communication
-
-**backend:**
-- Node.js + Express
-- Socket.IO for WebSocket connections
-- bcrypt for password hashing
-- JSON file storage (easily upgradeable to a database)
-
-## project structure
-
-```
-chess-game/
-├── index.html              # main page
-├── styles.css              # all the styles
-├── js/                     # frontend code
-│   ├── config.js          # server URL config
-│   ├── app.js             # main app logic
-│   ├── auth.js            # authentication
-│   ├── game.js            # game UI
-│   ├── chess-engine.js    # chess rules
-│   ├── ai.js              # AI opponent
-│   ├── multiplayer.js     # multiplayer client
-│   └── social.js          # friends & leaderboard
-├── server/                 # backend code
-│   ├── index.js           # main server
-│   ├── user-manager.js    # user authentication
-│   ├── room-manager.js    # game rooms
-│   ├── chess-validator.js # move validation
-│   ├── elo-calculator.js  # rating system
-│   └── friends-manager.js # friend system
-└── README.md              # you are here
-```
-
-## security
-
-passwords are hashed with bcrypt (10 salt rounds) and stored securely on the server. user data is saved in `server/users.json` which is excluded from git.
-
-for production deployment, consider:
-- using HTTPS (Render.com provides this automatically)
-- adding rate limiting for login attempts
-- upgrading to a proper database (MongoDB, PostgreSQL)
-- implementing JWT tokens for session management
-
-see `SECURE_AUTH_IMPLEMENTATION.md` for more details.
-
-## how to play
-
-1. **register** an account (or login if you already have one)
-2. **choose a game mode:**
-   - play vs AI for practice
-   - play online for multiplayer
-3. **make moves** by clicking pieces and target squares
-4. **chat** with your opponent during online games
-5. **offer draws** or resign if needed
-6. **check the leaderboard** to see top players
-
-## game rules
-
-standard chess rules apply:
-- all pieces move according to chess rules
-- castling is available when conditions are met
-- en passant capture is supported
-- pawns can promote to any piece
-- check must be resolved
-- checkmate ends the game
-- stalemate results in a draw
-
-## ELO rating
-
-- starting ELO: 1200
-- win against higher rated player: gain more ELO
-- win against lower rated player: gain less ELO
-- losses and draws adjust your rating accordingly
-- your rating is saved permanently on the server
-
-## contributing
-
-feel free to open issues or submit pull requests. this is a learning project so all contributions are welcome!
-
-## license
-
-MIT license - do whatever you want with this code.
-
-## credits
-
-built with ♟️ by a chess enthusiast, flaviengibs
-
-special thanks to Socket.IO for making real-time multiplayer easy.
+**Live:** https://chess.gibbons.fr
 
 ---
 
-enjoy the game! if you find any bugs or have suggestions, open an issue on GitHub.
+## What's new in 2.0.0
+
+- **Daily puzzles** – 30 real puzzles from the Lichess open database, rated by difficulty
+- **Board themes** – Classic, Blue, Green, Purple + dark mode
+- **Sound effects** – Move, capture, check, castle, game end (Web Audio API)
+- **Animations** – Last-move highlight, check pulse, configurable speed
+- **Game analysis** – Post-game move classification (best / good / inaccuracy / mistake / blunder)
+- **PGN export** – Copy your game to clipboard in standard notation
+- **Time controls** – 1, 3, 5, 10 minute options
+- **Tournament system** – Swiss-pairing server-side tournaments
+- **Settings panel** – All preferences in one place, persisted to localStorage
+
+---
+
+## Features
+
+### Game modes
+- **Play vs AI** – Three difficulty levels (easy, medium, hard)
+- **Online multiplayer** – Real-time games via Socket.IO
+- **Private rooms** – Create a room and share the code with a friend
+- **Matchmaking** – Find random opponents automatically
+- **Local 2-player** – Pass-and-play on the same device (board flips)
+
+### Chess rules
+- Full rule set: castling, en passant, pawn promotion, fifty-move rule, threefold repetition
+- Legal move highlighting
+- Check, checkmate and stalemate detection
+- Draw offers and resignation
+
+### Puzzles
+- 30 real puzzles sourced from the Lichess open puzzle database (CC0)
+- Beginner (≤1200), intermediate (1200–1600), advanced (1600–2000)
+- Daily puzzle rotation, hint system, solution reveal
+- Personal rating and solve history
+
+### Account system
+- Secure authentication (bcrypt, 10 salt rounds)
+- ELO rating system starting at 1200
+- Win / loss / draw statistics
+- Cross-device login
+
+### Social features
+- Friend system (send / accept requests)
+- Global leaderboard (top 50 players)
+- Player profiles with stats
+- In-game chat
+
+### Customisation
+- 4 board colour themes
+- Dark mode
+- Sound on/off + volume
+- Animation speed (fast / normal / slow)
+
+---
+
+## How to run locally
+
+### Prerequisites
+- Node.js 14+
+- A modern browser
+
+### Setup
+
+```bash
+git clone https://github.com/flaviengibs/chess.git
+cd chess/server
+npm install
+npm start
+```
+
+Then open `http://localhost:3000` in your browser.
+
+---
+
+## Project structure
+
+```
+chess/
+├── index.html              # Main page
+├── puzzles.html            # Puzzle trainer
+├── styles.css              # All styles
+├── js/
+│   ├── config.js           # Server URL config
+│   ├── app.js              # App initialisation & event wiring
+│   ├── auth.js             # Authentication client
+│   ├── game.js             # Game UI & logic
+│   ├── chess-engine.js     # Chess rules engine (+ FEN loader)
+│   ├── ai.js               # Minimax AI
+│   ├── enhancements.js     # Themes, sounds, animations, analysis, puzzles
+│   ├── puzzle_data.js      # 30 Lichess puzzles (auto-generated)
+│   ├── multiplayer.js      # Socket.IO multiplayer client
+│   └── social.js           # Friends & leaderboard
+└── server/
+    ├── index.js            # Express + Socket.IO server
+    ├── user-manager.js     # User auth & stats
+    ├── room-manager.js     # Game rooms
+    ├── chess-validator.js  # Server-side move validation
+    ├── elo-calculator.js   # ELO rating
+    ├── friends-manager.js  # Friend system
+    ├── tournament-manager.js # Swiss tournament system
+    └── connection-manager.js # Socket connection tracking
+```
+
+---
+
+## Tech stack
+
+**Frontend:** Vanilla JavaScript, HTML5, CSS3, Socket.IO client
+
+**Backend:** Node.js, Express, Socket.IO, bcrypt, JSON file storage
+
+---
+
+## Security
+
+- Passwords hashed with bcrypt (10 salt rounds)
+- `server/users.json` excluded from git
+- HTTPS provided by Render.com in production
+
+---
+
+## Puzzle data
+
+Puzzles are sourced from the [Lichess open puzzle database](https://database.lichess.org/#puzzles) under the CC0 licence. The extraction script (`extract_puzzles.js`) reads the CSV and outputs `js/puzzle_data.js`.
+
+---
+
+## Licence
+
+MIT – do whatever you want with this code.
+
+Built with ♟️ by flaviengibs.
