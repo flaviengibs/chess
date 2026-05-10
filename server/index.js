@@ -15,20 +15,26 @@ const ServerTournamentManager = require('./tournament-manager');
 // Configuration
 const PORT = process.env.PORT || 3000;
 
-// Allow multiple origins: comma-separated list in CLIENT_URL env var,
-// or fall back to localhost for local dev.
-const rawOrigins = process.env.CLIENT_URL || 'http://localhost:3000';
-const ALLOWED_ORIGINS = rawOrigins.split(',').map(o => o.trim());
+// Allow multiple origins: comma-separated list in CLIENT_URL env var.
+// Also always allow localhost for local dev.
+const rawOrigins = process.env.CLIENT_URL || '';
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  ...rawOrigins.split(',').map(o => o.trim()).filter(Boolean),
+];
+
+console.log(`[CORS] Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. curl, Postman, same-origin)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Blocked origin: ${origin}`);
-      callback(new Error(`CORS: origin ${origin} not allowed`));
-    }
+    // Allow requests with no origin (curl, Postman, same-origin static serving)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    // In development (no CLIENT_URL set), allow everything
+    if (!process.env.CLIENT_URL) return callback(null, true);
+    console.warn(`[CORS] Blocked origin: ${origin}`);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
 };
