@@ -14,17 +14,31 @@ const ServerTournamentManager = require('./tournament-manager');
 
 // Configuration
 const PORT = process.env.PORT || 3000;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+
+// Allow multiple origins: comma-separated list in CLIENT_URL env var,
+// or fall back to localhost for local dev.
+const rawOrigins = process.env.CLIENT_URL || 'http://localhost:3000';
+const ALLOWED_ORIGINS = rawOrigins.split(',').map(o => o.trim());
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. curl, Postman, same-origin)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked origin: ${origin}`);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+};
 
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
 
 // Configure CORS
-app.use(cors({
-  origin: CLIENT_URL,
-  credentials: true
-}));
+app.use(cors(corsOptions));
 
 // Parse JSON bodies
 app.use(express.json());
@@ -35,7 +49,7 @@ app.use(express.static(path.join(__dirname, '..')));
 // Initialize Socket.IO with CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -1257,7 +1271,7 @@ if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`[${new Date().toISOString()}] Chess multiplayer server running on port ${PORT}`);
     console.log(`[${new Date().toISOString()}] Serving static files from: ${path.join(__dirname, '..')}`);
-    console.log(`[${new Date().toISOString()}] Client URL: ${CLIENT_URL}`);
+    console.log(`[${new Date().toISOString()}] Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
   });
 } else {
   // For testing, start on a random port
